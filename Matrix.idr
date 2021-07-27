@@ -1,39 +1,24 @@
-
 module Matrix
-
 import Data.Vect
+%default total
 
-dot : Num a => Vect n a -> Vect n a -> a
-dot a b = foldr (+) 0 ((*) <$> a <*> b)
+implementation {n : Nat} -> Num a => Num (Vect n a) where
+  (+) a b = [| a + b |]
+  (*) a b = [| a * b |]
+  fromInteger i = replicate n (fromInteger i)
 
-Num a => Num (Vect n a) where
-  (+) Nil Nil = Nil
-  (+) (x :: xs) (y :: ys) = x + y :: xs + ys
-  (*) Nil Nil = Nil
-  (*) (x :: xs) (y :: ys) = x * y :: xs * ys
-  fromInteger i = replicate (fromInteger i) n
+Matrix : {t : Type} -> Nat -> Nat -> Type
+Matrix m n = Vect m (Vect n t)
 
--- namespace Vect
---   (+) : Num a => Vect n a -> Vect n a -> Vect n a
---   (+) Nil Nil = Nil
---   (+) (x :: xs) (y :: ys) = x + y :: dot xs ys
---
--- namespace Matrix
---   (+) : Num a => Vect n (Vect m a) -> Vect n (Vect m a) -> Vect n (Vect m a)
---   (+) Nil Nil = Nil
---   (+) (x :: xs) (y :: ys) = x + y :: xs + ys
+--unitVector : {n : Nat} -> Nat -> Vect n Double
+--unitVector i = replicate i 0 ++ [1] ++ replicate (n - i - 1) 0
 
--- data Matrix : Nat -> Nat -> Type -> Type where
---   Matrix : {a: Type} -> (n: Nat) -> (m: Nat) -> Vect n (Vect m a)
+-- todo: how can I generalise this to Num t => Matrix {t=t} n n?
+--identity : {n : Nat} -> Matrix {t=Double} n n
+--identity = fromList (map unitVector [0..(n-1)])
 
--- matmul : Matrix m n a -> Matrix n p a -> Matrix m p a
--- matmul {m} {n} {p} (a :: as) (b :: bs) =  :: matmul as bs
+dot : Num a => {n : Nat} -> Vect n a -> Vect n a -> a
+dot a b = sum (a * b)
 
--- idea: data Matrix with Num instance?
-
--- idea: define Vect as a Functor and
-
--- Looks like this is in Data.Vect.replicate too
-repeat : a -> (n: Nat) -> Vect n a
-repeat x 0 = fromList []
-repeat x (S n) = x :: repeat x n
+main : IO ()
+main = putStrLn "hello"
