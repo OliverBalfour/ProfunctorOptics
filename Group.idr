@@ -6,17 +6,6 @@ module Group
 
 infixl 7 <>
 
--- -- groups are types (like sets) with extra structure following some laws
--- interface Group a where
---   -- components
---   (<>) : a -> a -> a
---   neg : a -> a
---   e : a
---   -- laws
---   assoc : (x, y, z : a) -> (x <> y) <> z = x <> (y <> z)
---   identity : (x : a) -> (e <> x = x, x <> e = x)
---   inverses : (x : a) -> (neg x <> x = e, x <> neg x = e)
-
 -- a group is a type with an associative binary function with an id and inverses
 -- this record can represent verified groups of subsets of types (eg elements
 -- of a type that satisfy a predicate)
