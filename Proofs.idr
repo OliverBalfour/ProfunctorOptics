@@ -34,11 +34,13 @@ rev1 [] = []
 rev1 (x::xs) = rev1 xs ++ [x]
 
 shunt : List a -> List a -> List a
-shunt xs [] = xs
-shunt xs (y::ys) = shunt (y::xs) ys
+-- shunt xs [] = xs
+-- shunt xs (y::ys) = shunt (y::xs) ys
+shunt [] ys = ys
+shunt (x::xs) ys = shunt xs (x::ys)
 
 rev2 : List a -> List a
-rev2 xs = shunt [] xs
+rev2 xs = shunt xs []
 
 lemma3 : (xs, ys : List a) -> (x : a) -> (xs ++ [x]) ++ ys = xs ++ (x :: ys)
 
@@ -70,11 +72,12 @@ nilRightIdConcat (x::xs) = rewrite nilRightIdConcat xs in Refl
 --   let iH = shuntLemma xs ys zs
 --   in ?help2
 
-lemma2 : (xs, ys : List a) -> shunt [] xs ++ ys = shunt ys xs
+lemma2 : (xs, ys : List a) -> shunt xs ys = shunt xs [] ++ ys
 lemma2 [] ys = Refl
-lemma2 (x::xs) ys =
+lemma2 (x::xs) [] = rewrite nilRightIdConcat (shunt xs [x]) in Refl
+lemma2 (x::xs) (y::ys) =
   let iH = lemma2 xs ys
-  in ?help
+  in ?help3
 -- lemma2 xs [] = rewrite nilRightIdConcat (shunt [] xs) in Refl
 -- lemma2 xs' (y::ys) =
 --   let iH = lemma2 xs' ys
@@ -82,9 +85,21 @@ lemma2 (x::xs) ys =
 --     [] => Refl
 --     (x::xs) => ?help
 
-revExtEq : (xs : List a) -> rev1 xs = rev2 xs
-revExtEq [] = Refl
-revExtEq (x::xs) =
-  let iH = revExtEq xs
-  in rewrite iH
-  in lemma2 xs [x] -- shuntLemma xs [x] []
+lemma5 : (xs : List a) -> (x : a) -> [x] ++ xs = x :: xs
+lemma5 xs x = Refl
+
+lemma6 : (xs, ys, zs : List a) -> (xs ++ ys) ++ zs = xs ++ (ys ++ zs)
+lemma6 [] ys zs = Refl
+lemma6 (x::xs) ys zs =
+  let iH = lemma6 xs ys zs in rewrite iH in Refl
+
+lemma4 : (xs, ys : List a) -> rev1 xs ++ ys = shunt xs ys
+lemma4 [] _ = Refl
+lemma4 (x::xs) ys =
+  let iH = lemma4 xs (x::ys)
+      prf = lemma6 (rev1 xs) [x] ys
+  in rewrite prf in iH
+
+revTrEq : (xs : List a) -> rev1 xs = rev2 xs
+revTrEq [] = Refl
+revTrEq (x::xs) = lemma4 xs [x]
