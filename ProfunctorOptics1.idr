@@ -5,6 +5,7 @@ module ProfunctorOptics1
 
 infixr 0 ~>
 
+
 -- Helpers
 
 T2 : Type
@@ -21,6 +22,7 @@ fork f g x = (f x, g x)
 
 cross : (a -> b) -> (c -> d) -> (a, c) -> (b, d)
 cross f g (x, y) = (f x, g y)
+
 
 -- Profunctors and associated definitions
 
@@ -75,6 +77,7 @@ interface Profunctor p => Monoidal p where
   par   : p a b -> p c d -> p (a, c) (b, d)
   empty : p () ()
 
+
 -- Profunctor optics
 
 OpticT : Type
@@ -113,6 +116,7 @@ op = dimap (maybe (Left Nothing) Right) (either id Just) . right
 op_π₁ : LensPrism a b (Maybe (a, c)) (Maybe (b, c))
 op_π₁ = op . π₁
 
+
 -- Profunctor (->), allows us to use our optics
 
 -- (~>) is a synonym for (->) which is built-in, not a type constructor
@@ -143,3 +147,69 @@ implementation Monoidal (~>) where
   -- empty : () ~> ()
   empty = const ()
 
+
+-- Complex data structures
+
+data BTree : Type -> Type where
+  Empty : BTree a
+  Node : BTree a -> a -> BTree a -> BTree a
+
+inorder' : {f : T2} -> Applicative f
+  => (a -> f b)
+  -> BTree a -> f (BTree b)
+inorder' m Empty = pure Empty
+inorder' m (Node l x r) = Node <$> inorder' m l <*> m x <*> inorder' m r
+
+data FunList : Type -> Type -> Type -> Type where
+  Done : t -> FunList a b t
+  More : a -> FunList a b (b -> t) -> FunList a b t
+
+out : FunList a b t -> Either t (a, FunList a b (b -> t))
+out (Done t) = Left t
+out (More x l) = Right (x, l)
+
+inn : Either t (a, FunList a b (b -> t)) -> FunList a b t
+inn (Left t) = Done t
+inn (Right (x, l)) = More x l
+
+implementation Functor (FunList a b) where
+  map f (Done t) = Done (f t)
+  map f (More x l) = More x (map (f .) l)
+
+implementation Applicative (FunList a b) where
+  pure = Done
+  Done f <*> l = map f l
+  More x l <*> l2 = assert_total More x (map flip l <*> l2)
+
+single : a -> FunList a b b
+single x = More x (Done id)
+
+fuse : FunList b b t -> t
+fuse (Done t) = t
+fuse (More x l) = fuse l x
+
+traverse : {p : T3} -> (Cocartesian p, Monoidal p)
+  => p a b
+  -> p (FunList a c t) (FunList b c t)
+traverse k = assert_total dimap out inn (right (par k (traverse k)))
+
+makeTraversal : (s -> FunList a b t) -> Traversal a b s t
+makeTraversal h k = dimap h fuse (traverse k)
+
+inorder : {a, b : Type} -> Traversal a b (BTree a) (BTree b)
+inorder = makeTraversal (inorder' single)
+
+
+-- Some tests
+-- Aside: the fact that we can express unit tests on a type level means we get
+-- *compiler errors when unit tests fail*. Isn't that beautiful?
+
+square : Num a => a -> a
+square x = x * x
+
+-- can use (op {p=(~>)} . π₁ {p=(~>)}) instead, Idris doesn't guess p very well
+test1 : op_π₁ {p=(~>)} ProfunctorOptics1.square (Just (3, True)) = Just (9, True)
+test1 = Refl
+
+test2 : inorder {p=(~>)} ProfunctorOptics1.square (Node (Node Empty 3 Empty) 4 Empty) = Node (Node Empty 9 Empty) 16 Empty
+test2 = Refl
