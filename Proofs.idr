@@ -34,59 +34,11 @@ rev1 [] = []
 rev1 (x::xs) = rev1 xs ++ [x]
 
 shunt : List a -> List a -> List a
--- shunt xs [] = xs
--- shunt xs (y::ys) = shunt (y::xs) ys
 shunt [] ys = ys
 shunt (x::xs) ys = shunt xs (x::ys)
 
 rev2 : List a -> List a
 rev2 xs = shunt xs []
-
-lemma3 : (xs, ys : List a) -> (x : a) -> (xs ++ [x]) ++ ys = xs ++ (x :: ys)
-
--- lemma2 : (xs, ys : List a) -> rev1 xs ++ ys = shunt ys xs
--- lemma2 [] ys = Refl
--- lemma2 (x::xs) ys =
---   let iH = lemma2 xs ys
---   in ?help  -- rewrite lemma3 (rev1 xs) ys x in ?help
-
-nilRightIdConcat : (xs : List a) -> xs ++ [] = xs
-nilRightIdConcat [] = Refl
-nilRightIdConcat (x::xs) = rewrite nilRightIdConcat xs in Refl
-
--- shuntLemma : (xs, ys, zs : List a) -> shunt zs xs ++ ys = shunt (zs ++ ys) xs
--- -- shuntLemma [] ys zs = Refl
--- -- shuntLemma (x::xs) ys zs =
--- --   let iH = shuntLemma xs ys zs
--- --   in ?help
-
--- -- shuntLemma xs [] zs =
--- --   rewrite nilRightIdConcat (shunt zs xs) in
--- --     rewrite nilRightIdConcat zs in
--- --       Refl
--- -- shuntLemma xs (y::ys) zs =
--- --   let iH = shuntLemma xs ys zs in ?help
-
--- shuntLemma xs ys [] = ?help
--- shuntLemma xs ys (z::zs) =
---   let iH = shuntLemma xs ys zs
---   in ?help2
-
-lemma2 : (xs, ys : List a) -> shunt xs ys = shunt xs [] ++ ys
-lemma2 [] ys = Refl
-lemma2 (x::xs) [] = rewrite nilRightIdConcat (shunt xs [x]) in Refl
-lemma2 (x::xs) (y::ys) =
-  let iH = lemma2 xs ys
-  in ?help3
--- lemma2 xs [] = rewrite nilRightIdConcat (shunt [] xs) in Refl
--- lemma2 xs' (y::ys) =
---   let iH = lemma2 xs' ys
---   in case xs' of
---     [] => Refl
---     (x::xs) => ?help
-
-lemma5 : (xs : List a) -> (x : a) -> [x] ++ xs = x :: xs
-lemma5 xs x = Refl
 
 lemma6 : (xs, ys, zs : List a) -> (xs ++ ys) ++ zs = xs ++ (ys ++ zs)
 lemma6 [] ys zs = Refl
@@ -104,9 +56,32 @@ revTrEq : (xs : List a) -> rev1 xs = rev2 xs
 revTrEq [] = Refl
 revTrEq (x::xs) = lemma4 xs [x]
 
-
 -- Exercise 3: rev injective
 
 -- note: rev1 is the inefficient one
-rev1Injective : (xs, ys : List a) -> rev1 xs = rev1 ys -> xs = ys
+rev1Lemma : (y : a) -> (xs : List a) -> y :: rev1 xs = rev1 (xs ++ [y])
+rev1Lemma _ [] = Refl
+rev1Lemma y (x::xs) =
+  let iH = rev1Lemma y xs
+  in rewrite cong (++[x]) iH
+  in Refl
 
+rev1Involution : (xs : List a) -> xs = rev1 (rev1 xs)
+rev1Involution [] = Refl
+rev1Involution (x::xs) =
+  let iH = rev1Involution xs
+      shed = cong (x::) iH
+  in rewrite shed
+  in rev1Lemma x (rev1 xs)
+
+rev1Injective : (xs, ys : List a) -> rev1 xs = rev1 ys -> xs = ys
+rev1Injective xs ys prf =
+  rewrite rev1Involution xs
+  in rewrite rev1Involution ys
+  in cong rev1 prf
+
+rev2Injective : (xs, ys : List a) -> rev2 xs = rev2 ys -> xs = ys
+rev2Injective xs ys prf =
+  let step1 : (rev2 xs = rev1 ys) = trans prf (sym (revTrEq ys))
+      step2 : (rev1 xs = rev1 ys) = trans (revTrEq xs) step1
+  in rev1Injective xs ys step2
