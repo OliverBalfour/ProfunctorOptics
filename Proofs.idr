@@ -103,3 +103,10 @@ lemma4 (x::xs) ys =
 revTrEq : (xs : List a) -> rev1 xs = rev2 xs
 revTrEq [] = Refl
 revTrEq (x::xs) = lemma4 xs [x]
+
+
+-- Exercise 3: rev injective
+
+-- note: rev1 is the inefficient one
+rev1Injective : (xs, ys : List a) -> rev1 xs = rev1 ys -> xs = ys
+
