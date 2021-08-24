@@ -150,16 +150,6 @@ implementation Monoidal (~>) where
 
 -- Complex data structures
 
-data BTree : Type -> Type where
-  Empty : BTree a
-  Node : BTree a -> a -> BTree a -> BTree a
-
-inorder' : {f : T2} -> Applicative f
-  => (a -> f b)
-  -> BTree a -> f (BTree b)
-inorder' m Empty = pure Empty
-inorder' m (Node l x r) = Node <$> inorder' m l <*> m x <*> inorder' m r
-
 data FunList : Type -> Type -> Type -> Type where
   Done : t -> FunList a b t
   More : a -> FunList a b (b -> t) -> FunList a b t
@@ -196,8 +186,41 @@ traverse k = assert_total dimap out inn (right (par k (traverse k)))
 makeTraversal : (s -> FunList a b t) -> Traversal a b s t
 makeTraversal h k = dimap h fuse (traverse k)
 
+-- Binary trees
+
+data BTree : Type -> Type where
+  Empty : BTree a
+  Node : BTree a -> a -> BTree a -> BTree a
+
+inorder' : {f : T2} -> Applicative f
+  => (a -> f b)
+  -> BTree a -> f (BTree b)
+inorder' m Empty = pure Empty
+inorder' m (Node l x r) = Node <$> inorder' m l <*> m x <*> inorder' m r
+
 inorder : {a, b : Type} -> Traversal a b (BTree a) (BTree b)
 inorder = makeTraversal (inorder' single)
+
+-- Lists
+
+listTraverse' : {f : T2} -> Applicative f
+  => (a -> f b)
+  -> List a -> f (List b)
+listTraverse' g [] = pure []
+listTraverse' g (x::xs) = (::) <$> g x <*> listTraverse' g xs
+
+listTraverse : {a, b : Type} -> Traversal a b (List a) (List b)
+listTraverse = makeTraversal (listTraverse' single)
+
+-- -- This proof is commented out because it causes Idris to infinite loop
+-- listTraverseGeneralisesMap : {a, b : Type}
+--   -> (f' : a -> b)
+--   -> (xs' : List a)
+--   -> listTraverse {p=(~>)} f' xs' = map f' xs'
+-- listTraverseGeneralisesMap f [] = Refl
+-- listTraverseGeneralisesMap f (x::xs) =
+--   let iH = listTraverseGeneralisesMap {a=a} {b=b} f xs
+--   in rewrite iH in Refl
 
 
 -- Some tests
@@ -213,3 +236,6 @@ test1 = Refl
 
 test2 : inorder {p=(~>)} ProfunctorOptics1.square (Node (Node Empty 3 Empty) 4 Empty) = Node (Node Empty 9 Empty) 16 Empty
 test2 = Refl
+
+test3 : listTraverse {p=(~>)} ProfunctorOptics1.square [1,2,3,4] = [1,4,9,16]
+test3 = Refl
