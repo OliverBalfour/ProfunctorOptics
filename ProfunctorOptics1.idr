@@ -226,30 +226,30 @@ listTraverse = makeTraversal (listTraverse' single)
 
 -- Rose trees
 
-data RTree : Type -> Type where
-  Leaf : a -> RTree a
-  Branch : List (RTree a) -> RTree a
+-- data RTree : Type -> Type where
+--   Leaf : a -> RTree a
+--   Branch : List (RTree a) -> RTree a
 
-implementation Functor RTree where
-  -- map : (a -> b) -> (RTree a -> RTree b)
-  map f (Leaf x) = Leaf (f x)
-  map f (Branch []) = Branch []
-  map f (Branch (x::xs)) = Branch (map f x :: map (map f) xs)
+-- implementation Functor RTree where
+--   -- map : (a -> b) -> (RTree a -> RTree b)
+--   map f (Leaf x) = Leaf (f x)
+--   map f (Branch []) = Branch []
+--   map f (Branch (x::xs)) = Branch (map f x :: map (map f) xs)
 
-implementation Foldable RTree where
-  -- foldr : (elem -> acc -> acc) -> acc -> RTree elem -> acc
-  foldr f a (Leaf x) = f x a
-  foldr f a (Branch []) = a
-  foldr f a (Branch (x::xs)) = ?help
+-- implementation Foldable RTree where
+--   -- foldr : (elem -> acc -> acc) -> acc -> RTree elem -> acc
+--   foldr f a (Leaf x) = f x a
+--   foldr f a (Branch []) = a
+--   foldr f a (Branch (x::xs)) = ?help
 
-implementation Traversable RTree where
-  -- traverse : Applicative f => (a -> f b) -> RTree a -> f (RTree b)
-  traverse g (Leaf x) = Leaf <$> g x
-  traverse g (Branch []) = pure (Branch [])
-  traverse g (Branch (x::xs)) =
-    let x' = traverse g x
-        xs' = traverse g (Branch xs)
-    in Branch <$> (x' :: xs')
+-- implementation Traversable RTree where
+--   -- traverse : Applicative f => (a -> f b) -> RTree a -> f (RTree b)
+--   traverse g (Leaf x) = Leaf <$> g x
+--   traverse g (Branch []) = pure (Branch [])
+--   traverse g (Branch (x::xs)) =
+--     let x' = traverse g x
+--         xs' = traverse g (Branch xs)
+--     in Branch <$> ?help2 -- (x' :: xs')
 
 -- traverseRTree' : {f : T2} -> Applicative f
 --   => (a -> f b)
