@@ -192,6 +192,8 @@ data BTree : Type -> Type where
   Empty : BTree a
   Node : BTree a -> a -> BTree a -> BTree a
 
+-- TODO: is FunList a Monad? If so, we can do traversals other than in-order
+
 inorder' : {f : T2} -> Applicative f
   => (a -> f b)
   -> BTree a -> f (BTree b)
@@ -221,6 +223,44 @@ listTraverse = makeTraversal (listTraverse' single)
 -- listTraverseGeneralisesMap f (x::xs) =
 --   let iH = listTraverseGeneralisesMap {a=a} {b=b} f xs
 --   in rewrite iH in Refl
+
+-- Rose trees
+
+data RTree : Type -> Type where
+  Leaf : a -> RTree a
+  Branch : List (RTree a) -> RTree a
+
+implementation Functor RTree where
+  -- map : (a -> b) -> (RTree a -> RTree b)
+  map f (Leaf x) = Leaf (f x)
+  map f (Branch []) = Branch []
+  map f (Branch (x::xs)) = Branch (map f x :: map (map f) xs)
+
+implementation Foldable RTree where
+  -- foldr : (elem -> acc -> acc) -> acc -> RTree elem -> acc
+  foldr f a (Leaf x) = f x a
+  foldr f a (Branch []) = a
+  foldr f a (Branch (x::xs)) = ?help
+
+implementation Traversable RTree where
+  -- traverse : Applicative f => (a -> f b) -> RTree a -> f (RTree b)
+  traverse g (Leaf x) = Leaf <$> g x
+  traverse g (Branch []) = pure (Branch [])
+  traverse g (Branch (x::xs)) =
+    let x' = traverse g x
+        xs' = traverse g (Branch xs)
+    in Branch <$> (x' :: xs')
+
+-- traverseRTree' : {f : T2} -> Applicative f
+--   => (a -> f b)
+--   -> RTree a -> f (RTree b)
+-- traverseRTree' g (Leaf x) = Leaf <$> g x
+-- traverseRTree' g (Branch branches) = foldr
+--   (\branch, acc => ?help (Branch [traverse g branch, acc]))
+--   (pure (Branch []))
+--   branches
+
+-- -- foldr (\(Branch acc) x => Branch $ (::) <$> traverseRTree' g x <*> acc) (pure []) xs
 
 
 -- Some tests
