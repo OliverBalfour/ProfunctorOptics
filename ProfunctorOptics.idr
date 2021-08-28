@@ -2,6 +2,8 @@
 module ProfunctorOptics
 
 import Profunctor
+import PrimitiveOptics
+import Data.Vect
 
 %default total
 
@@ -60,6 +62,11 @@ rightP = right
 op_π₁ : LensPrism a b (Maybe (a, c)) (Maybe (b, c))
 op_π₁ = op . π₁
 
+-- Map primitive optics to profunctor optics
+
+prismFromPrim : PrimPrism a b s t -> Prism a b s t
+prismFromPrim (MkPrimPrism m b) = dimap m (either id b) . right
+
 -- Complex data structures
 
 data FunList : Type -> Type -> Type -> Type where
@@ -98,13 +105,30 @@ traverse k = assert_total dimap out inn (right (par k (traverse k)))
 makeTraversal : (s -> FunList a b t) -> Traversal a b s t
 makeTraversal h k = dimap h fuse (traverse k)
 
+-- Dependently typed version of FunList (they're both isomorphic to ∃n. A^n x (B^n -> T))
+-- I should use (n : Nat ** (Vect n a, Vect n b -> t)) as this has the right quantifier
+-- data BoringList : Type -> Type -> Type -> Type where
+--   MkBoringList : (n : Nat) -> (Vect n a, Vect n b -> t) -> BoringList a b t
+
+-- traverse' : {p : Type -> Type -> Type} -> (Cocartesian p, Monoidal p)
+--   => p a b
+--   -> p (BoringList a c t) (BoringList b c t)
+-- traverse' k = ?test
+
+-- fuse' : BoringList b b t -> t
+-- fuse' (MkBoringList n (as, bs2t)) = ?this_isn't_possible
+
+-- How do I define this?
+-- makeTraversal' : (s -> BoringList a b t) -> Traversal a b s t
+-- makeTraversal' h k = dimap h fuse' (traverse' k)
+
 -- Binary trees
 
 data BTree : Type -> Type where
   Empty : BTree a
   Node : BTree a -> a -> BTree a -> BTree a
 
--- TODO: is FunList a Monad? If so, we can do traversals other than in-order
+-- Tree traversals
 
 inorder' : {f : Type -> Type} -> Applicative f
   => (a -> f b)
@@ -114,6 +138,37 @@ inorder' m (Node l x r) = Node <$> inorder' m l <*> m x <*> inorder' m r
 
 inorder : {a, b : Type} -> Traversal a b (BTree a) (BTree b)
 inorder = makeTraversal (inorder' single)
+
+preorder' : {f : Type -> Type} -> Applicative f
+  => (a -> f b)
+  -> BTree a -> f (BTree b)
+preorder' m Empty = pure Empty
+preorder' m (Node l x r) =
+  (\mid, left, right => Node left mid right) <$>
+    m x <*> preorder' m l <*> preorder' m r
+
+preorder : {a, b : Type} -> Traversal a b (BTree a) (BTree b)
+preorder = makeTraversal (preorder' single)
+
+postorder' : {f : Type -> Type} -> Applicative f
+  => (a -> f b)
+  -> BTree a -> f (BTree b)
+postorder' m Empty = pure Empty
+postorder' m (Node l x r) =
+  (\left, right, mid => Node left mid right) <$>
+    postorder' m l <*> postorder' m r <*> m x
+
+postorder : {a, b : Type} -> Traversal a b (BTree a) (BTree b)
+postorder = makeTraversal (postorder' single)
+
+-- TODO: left subtree prism for a binary tree
+-- can we construct this from op?
+-- leftSubtree : {a : Type} -> Prism a a (BTree a) (BTree a)
+-- leftSubtree = prismFromPrim prim where
+--   prim : PrimPrism (BTree a) (BTree a) (BTree a) (BTree a)
+--   prim = MkPrimPrism match build where
+--     match : BTree a -> Either (BTree a) (BTree a)
+--     match Empty = Left Empty
 
 -- Lists
 

@@ -1,5 +1,7 @@
 
-module Lens
+module PrimitiveOptics
+
+import Profunctor
 
 %default total
 
@@ -8,46 +10,49 @@ module Lens
 -- And you can't compose prisms and lenses with this encoding
 -- Solution: write primitive optics and map them to profunctor optics
 
-data Lens : Type -> Type -> Type -> Type -> Type where
-  MkLens
+public export
+data PrimLens : Type -> Type -> Type -> Type -> Type where
+  MkPrimLens
     :  (view : s -> a)
     -> (update : (b, s) -> t)
-    -> Lens a b s t
+    -> PrimLens a b s t
 
-data Prism : Type -> Type -> Type -> Type -> Type where
-  MkPrism
+public export
+data PrimPrism : Type -> Type -> Type -> Type -> Type where
+  MkPrimPrism
     :  (match : s -> Either t a)
     -> (build : b -> t)
-    -> Prism a b s t
+    -> PrimPrism a b s t
 
-data Adapter : Type -> Type -> Type -> Type -> Type where
-  MkAdapter
+public export
+data PrimAdapter : Type -> Type -> Type -> Type -> Type where
+  MkPrimAdapter
     :  (from : s -> a)
     -> (to : b -> t)
-    -> Adapter a b s t
+    -> PrimAdapter a b s t
 
 -- Basic optics: product projections, optionals, etc.
 
-π₁ : Lens a b (a, c) (b, c)
-π₁ = MkLens fst update where
+π₁ : PrimLens a b (a, c) (b, c)
+π₁ = MkPrimLens fst update where
   update : (b, (a, c)) -> (b, c)
   update (x', (x, y)) = (x', y)
 
-π₂ : Lens a b (c, a) (c, b)
-π₂ = MkLens snd update where
+π₂ : PrimLens a b (c, a) (c, b)
+π₂ = MkPrimLens snd update where
   update : (b, (c, a)) -> (c, b)
   update (x', (y, x)) = (y, x')
 
-sgn : Lens Bool Bool Integer Integer
-sgn = MkLens signum chsgn where
+sgn : PrimLens Bool Bool Integer Integer
+sgn = MkPrimLens signum chsgn where
   signum : Integer -> Bool
   signum x = x >= 0
   chsgn : (Bool, Integer) -> Integer
   chsgn (True,  x) =  abs x
   chsgn (False, x) = -abs x
 
-op : Prism a b (Maybe a) (Maybe b)
-op = MkPrism match build where
+op : PrimPrism a b (Maybe a) (Maybe b)
+op = MkPrimPrism match build where
   match : Maybe a -> Either (Maybe b) a
   match (Just x) = Right x
   match Nothing = Left Nothing
@@ -55,5 +60,16 @@ op = MkPrism match build where
   build = Just
 
 -- witness to the iso (A x B) x C ~=~ A x (B x C)
-prodAssoc : Adapter ((a,b),c) ((a',b'),c') (a,(b,c)) (a',(b',c'))
-prodAssoc = MkAdapter (\(x,(y,z))=>((x,y),z)) (\((x,y),z)=>(x,(y,z)))
+prodAssoc : PrimAdapter ((a,b),c) ((a',b'),c') (a,(b,c)) (a',(b',c'))
+prodAssoc = MkPrimAdapter (\(x,(y,z))=>((x,y),z)) (\((x,y),z)=>(x,(y,z)))
+
+-- Primitive optics are special cases of profunctors
+
+public export
+implementation {a : Type} -> {b : Type} -> Profunctor (PrimPrism a b) where
+  dimap f g (MkPrimPrism m b) = MkPrimPrism (bimap g id . m . f) (g . b)
+
+public export
+implementation {a : Type} -> {b : Type} -> Cocartesian (PrimPrism a b) where
+  left (MkPrimPrism m b) = MkPrimPrism (either (bimap Left id . m) (Left . Right)) (Left . b)
+  right (MkPrimPrism m b) = MkPrimPrism (either (Left . Left) (bimap Right id . m)) (Right . b)
