@@ -6,27 +6,9 @@ module ProfunctorOptics1
 infixr 0 ~>
 
 
--- Helpers
-
-T2 : Type
-T2 = Type -> Type
-T3 : Type
-T3 = Type -> Type -> Type
-T4 : Type
-T4 = Type -> Type -> Type -> Type
-T5 : Type
-T5 = Type -> Type -> Type -> Type -> Type
-
-fork : (a -> b) -> (a -> c) -> a -> (b, c)
-fork f g x = (f x, g x)
-
-cross : (a -> b) -> (c -> d) -> (a, c) -> (b, d)
-cross f g (x, y) = (f x, g y)
-
-
 -- Profunctors and associated definitions
 
-interface Profunctor (p : T3) where
+interface Profunctor (p : Type -> Type -> Type) where
   dimap : (a -> b) -> (c -> d) -> p b c -> p a d
   dimap f g = lmap f . rmap g
 
@@ -36,7 +18,7 @@ interface Profunctor (p : T3) where
   rmap : (a -> b) -> p c a -> p c b
   rmap = dimap Basics.id
 
-interface Profunctor p => VerifiedProfunctor (p : T3) where
+interface Profunctor p => VerifiedProfunctor (p : Type -> Type -> Type) where
   proId : {a, b : Type} -> (x : p a b) -> dimap Basics.id Basics.id x = x
   proComp
     : {a, b, c, d, e, t : Type}
@@ -52,11 +34,11 @@ interface Profunctor p => VerifiedProfunctor (p : T3) where
 -- Like a morphism in a Kleisli category, but f is only required to be a functor
 -- Ideally don't use a record to carry around types, is there a nicer way
 -- to do this using dependent types?
-record UpStar (f : T2) a b where
+record UpStar (f : Type -> Type) a b where
   constructor MkUpStar
   unUpStar : a -> f b
 
-implementation {f : T2} -> Functor f => Profunctor (UpStar f) where
+implementation {f : Type -> Type} -> Functor f => Profunctor (UpStar f) where
   dimap g h (MkUpStar i) = MkUpStar (map h . i . g)
 
 -- Profunctors for product types
@@ -81,35 +63,35 @@ interface Profunctor p => Monoidal p where
 -- Profunctor optics
 
 OpticT : Type
-OpticT = T3 -> T5
+OpticT = (Type -> Type -> Type) -> Type -> Type -> Type -> Type -> Type
 
 Optic : OpticT
 Optic p a b s t = p a b -> p s t
 
-Adapter : T5
-Adapter a b s t = {p : T3} -> Profunctor p => Optic p a b s t
+Adapter : Type -> Type -> Type -> Type -> Type
+Adapter a b s t = {p : Type -> Type -> Type} -> Profunctor p => Optic p a b s t
 
-Lens : T5
-Lens a b s t = {p : T3} -> Cartesian p => Optic p a b s t
+Lens : Type -> Type -> Type -> Type -> Type
+Lens a b s t = {p : Type -> Type -> Type} -> Cartesian p => Optic p a b s t
 
-Prism : T5
-Prism a b s t = {p : T3} -> Cocartesian p => Optic p a b s t
+Prism : Type -> Type -> Type -> Type -> Type
+Prism a b s t = {p : Type -> Type -> Type} -> Cocartesian p => Optic p a b s t
 
-LensPrism : T5
-LensPrism a b s t = {p : T3}
+LensPrism : Type -> Type -> Type -> Type -> Type
+LensPrism a b s t = {p : Type -> Type -> Type}
   -> (Cartesian p, Cocartesian p)
   => Optic p a b s t
 
-Traversal : T5
-Traversal a b s t = {p : T3}
+Traversal : Type -> Type -> Type -> Type -> Type
+Traversal a b s t = {p : Type -> Type -> Type}
   -> (Cartesian p, Cocartesian p, Monoidal p)
   => Optic p a b s t
 
--- π₁ : {p : T3} -> Cartesian p => p a b -> p (a, c) (b, c)
+-- π₁ : {p : Type -> Type -> Type} -> Cartesian p => p a b -> p (a, c) (b, c)
 π₁ : Lens a b (a, c) (b, c)
-π₁ = dimap (fork fst id) (cross id snd) . first
+π₁ = dimap (\x => (fst x, x)) (\(x, y) => (x, snd y)) . first
 
--- op : {p : T3} -> Cocartesian p => p a b -> p (Maybe a) (Maybe b)
+-- op : {p : Type -> Type -> Type} -> Cocartesian p => p a b -> p (Maybe a) (Maybe b)
 op : Prism a b (Maybe a) (Maybe b)
 op = dimap (maybe (Left Nothing) Right) (either id Just) . right
 
@@ -120,7 +102,7 @@ op_π₁ = op . π₁
 -- Profunctor (->), allows us to use our optics
 
 -- (~>) is a synonym for (->) which is built-in, not a type constructor
-(~>) : T3
+(~>) : Type -> Type -> Type
 a ~> b = a -> b
 
 implementation Profunctor (~>) where
@@ -143,7 +125,7 @@ implementation Cocartesian (~>) where
 
 implementation Monoidal (~>) where
   -- par   : (a ~> b) -> (c ~> d) -> ((a, c) ~> (b, d))
-  par = cross
+  par f g (x, y) = (f x, g y)
   -- empty : () ~> ()
   empty = const ()
 
@@ -178,7 +160,7 @@ fuse : FunList b b t -> t
 fuse (Done t) = t
 fuse (More x l) = fuse l x
 
-traverse : {p : T3} -> (Cocartesian p, Monoidal p)
+traverse : {p : Type -> Type -> Type} -> (Cocartesian p, Monoidal p)
   => p a b
   -> p (FunList a c t) (FunList b c t)
 traverse k = assert_total dimap out inn (right (par k (traverse k)))
@@ -194,7 +176,7 @@ data BTree : Type -> Type where
 
 -- TODO: is FunList a Monad? If so, we can do traversals other than in-order
 
-inorder' : {f : T2} -> Applicative f
+inorder' : {f : Type -> Type} -> Applicative f
   => (a -> f b)
   -> BTree a -> f (BTree b)
 inorder' m Empty = pure Empty
@@ -205,7 +187,7 @@ inorder = makeTraversal (inorder' single)
 
 -- Lists
 
-listTraverse' : {f : T2} -> Applicative f
+listTraverse' : {f : Type -> Type} -> Applicative f
   => (a -> f b)
   -> List a -> f (List b)
 listTraverse' g [] = pure []
@@ -251,7 +233,7 @@ listTraverse = makeTraversal (listTraverse' single)
 --         xs' = traverse g (Branch xs)
 --     in Branch <$> ?help2 -- (x' :: xs')
 
--- traverseRTree' : {f : T2} -> Applicative f
+-- traverseRTree' : {f : Type -> Type} -> Applicative f
 --   => (a -> f b)
 --   -> RTree a -> f (RTree b)
 -- traverseRTree' g (Leaf x) = Leaf <$> g x
@@ -279,3 +261,9 @@ test2 = Refl
 
 test3 : listTraverse {p=(~>)} ProfunctorOptics1.square [1,2,3,4] = [1,4,9,16]
 test3 = Refl
+
+
+-- Ideas for more optics
+
+-- index : Nat -> Prism on lists, gets/sets the nth item of a list if it exists
+-- index' : Fin n -> Lens on Vect n a
