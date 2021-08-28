@@ -27,10 +27,6 @@ interface Profunctor p => VerifiedProfunctor (p : Type -> Type -> Type) where
     -> (g :  e -> t) -> (g' : b -> e)
     -> dimap (f' . f) (g . g') x = (dimap f g . dimap f' g') x
 
--- -- Invalid syntax but illustrative
--- instance Profunctor (->) where
---   dimap f g h = g . h . f
-
 -- Like a morphism in a Kleisli category, but f is only required to be a functor
 -- Ideally don't use a record to carry around types, is there a nicer way
 -- to do this using dependent types?

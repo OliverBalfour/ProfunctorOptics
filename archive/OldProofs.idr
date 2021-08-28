@@ -1,4 +1,4 @@
-module Proofs
+module OldProofs
 import Data.List
 %default total
 
