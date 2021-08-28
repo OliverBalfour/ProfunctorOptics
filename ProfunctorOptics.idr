@@ -32,13 +32,30 @@ Traversal a b s t = {p : Type -> Type -> Type}
   -> (Cartesian p, Cocartesian p, Monoidal p)
   => Optic p a b s t
 
+-- Product types (trivial)
+
 -- π₁ : {p : Type -> Type -> Type} -> Cartesian p => p a b -> p (a, c) (b, c)
 π₁ : Lens a b (a, c) (b, c)
-π₁ = dimap (\x => (fst x, x)) (\(x, y) => (x, snd y)) . first
+π₁ = first
+
+π₂ : Lens a b (c, a) (c, b)
+π₂ = second
+
+-- Optional types
 
 -- op : {p : Type -> Type -> Type} -> Cocartesian p => p a b -> p (Maybe a) (Maybe b)
 op : Prism a b (Maybe a) (Maybe b)
 op = dimap (maybe (Left Nothing) Right) (either id Just) . right
+
+-- Sum/coproduct types (trivial)
+
+leftP : Prism a b (Either a c) (Either b c)
+leftP = left
+
+rightP : Prism a b (Either c a) (Either c b)
+rightP = right
+
+-- Composition
 
 op_π₁ : LensPrism a b (Maybe (a, c)) (Maybe (b, c))
 op_π₁ = op . π₁
