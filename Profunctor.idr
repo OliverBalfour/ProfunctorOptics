@@ -6,6 +6,16 @@ module Profunctor
 infixr 0 ~>
 infixr 0 ~~>
 
+-- Function equality axioms
+-- This was introduced because we need a way to equate values of type
+-- Profunctor p => p a b. These are generally functions but may be standalone
+-- values, and we need a way to use extensional equality without constraining
+-- ourselves to only function valued profunctors
+-- The alternative is to require that all profunctors be functions, and then
+-- constants are maps x : () -> a instead of just x : a
+etaReductionEq : (f : a -> b) -> (\x => f x) = f
+extEq : (f, g : a -> b) -> (x : a) -> f x = g x -> f = g
+
 -- Profunctors and their laws
 
 public export
@@ -21,34 +31,40 @@ interface Profunctor (p : Type -> Type -> Type) where
 
 public export
 interface Profunctor p => VerifiedProfunctor (p : Type -> Type -> Type) where
-  proId : {a, b : Type} -> (x : p a b) -> dimap Basics.id Basics.id x = x
+  proId : {a, b : Type} -> (x : p a b) -> dimap {p=p} Basics.id Basics.id x = x
   proComp
     : {a, b, c, d, e, t : Type}
     -> (x : p a b)
     -> (f' : c -> a) -> (f  : d -> c)
     -> (g :  e -> t) -> (g' : b -> e)
-    -> dimap (f' . f) (g . g') x = (dimap f g . dimap f' g') x
+    -> dimap {p=p} (f' . f) (g . g') x = (dimap {p=p} f g . dimap {p=p} f' g') x
 
--- Profunctors for product types
+-- Profunctors for product and sum types, and monoidal profunctors
 
 public export
 interface Profunctor p => Cartesian p where
   first  : p a b -> p (a, c) (b, c)
   second : p a b -> p (c, a) (c, b)
 
--- Profunctors for sum types
-
 public export
 interface Profunctor p => Cocartesian p where
   left  : p a b -> p (Either a c) (Either b c)
   right : p a b -> p (Either c a) (Either c b)
 
--- Monoidal profunctors
-
 public export
 interface Profunctor p => Monoidal p where
   par   : p a b -> p c d -> p (a, c) (b, d)
   empty : p () ()
+
+
+-- Other interfaces
+
+public export
+interface Functor f => VerifiedFunctor (f : Type -> Type) where
+  mapId : {x : f a}
+    -> map {f=f} Basics.id x = x
+  mapComp : {x : f a} -> {g : b -> c} -> {h : a -> b}
+    -> map (g . h) x = (map {f=f} g . map {f=f} h) x
 
 
 -- Function types form the Hom(-,-) profunctor
@@ -62,6 +78,11 @@ public export
 implementation Profunctor (~>) where
   -- dimap : (a -> b) -> (c -> d) -> (b ~> c) -> (a ~> d)
   dimap f g h = g . h . f
+
+public export
+implementation VerifiedProfunctor (~>) where
+  proId f = etaReductionEq f
+  proComp x f' f g g' = Refl
 
 public export
 implementation Cartesian (~>) where
@@ -88,7 +109,8 @@ implementation Monoidal (~>) where
 
 
 -- Function types with a functorial return value
--- Like a Kleisli arrow but f is a functor not a monad
+-- This is the Hom(-,-) profunctor in the Kleisli category, except it's defined
+-- for functors and applicatives too
 
 public export
 (~~>) : {f : Type -> Type} -> Type -> Type -> Type
@@ -96,7 +118,12 @@ a ~~> b = a -> f b
 
 public export
 implementation {f : Type -> Type} -> Functor f => Profunctor ((~~>) {f=f}) where
-  dimap g h i = map h . i . g
+  dimap g h i = map {f=f} h . i . g
+
+-- public export
+-- implementation {f : Type -> Type} -> (VerifiedFunctor f, Profunctor ((~~>) {f=f})) => VerifiedProfunctor ((~~>) {f=f}) where
+--   proId g = ?help1
+--   proComp x f' f g g' = ?help2
 
 public export
 implementation {f : Type -> Type} -> (Functor f, Profunctor ((~~>) {f=f})) => Cartesian ((~~>) {f=f}) where
