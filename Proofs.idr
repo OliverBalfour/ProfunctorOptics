@@ -85,3 +85,70 @@ rev2Injective xs ys prf =
   let step1 : (rev2 xs = rev1 ys) = trans prf (sym (revTrEq ys))
       step2 : (rev1 xs = rev1 ys) = trans (revTrEq xs) step1
   in rev1Injective xs ys step2
+
+
+-- Verified functor proofs
+
+public export
+interface Functor f => VerifiedFunctor (f : Type -> Type) where
+  mapId : (x : f a)
+    -> map {f=f} Basics.id x = x
+  mapComp : (x : f a) -> (g : b -> c) -> (h : a -> b)
+    -> map (g . h) x = (map {f=f} g . map {f=f} h) x
+
+mapIdIsId : (xs : List a) -> map Basics.id xs = xs
+mapIdIsId [] = Refl
+mapIdIsId (x::xs) =
+  let iH = mapIdIsId xs
+  in cong (x::) iH
+
+implementation VerifiedFunctor List where
+  mapId [] = Refl
+  mapId (x::xs) =
+    let iH = mapId xs
+    in cong (x::) (mapIdIsId xs)
+
+  mapComp [] g h = Refl
+  mapComp (x::xs) g h =
+    let iH = mapComp xs g h
+    in cong (g (h x) ::) iH
+
+-- TODO: Data.Morphism has some of this stuff
+record Morphism a b where
+  constructor Mor
+  applyMor : a -> b
+
+infixr 1 ~>
+
+(~>) : Type -> Type -> Type
+(~>) = Morphism
+
+implementation Functor (Morphism a) where
+  map f (Mor g) = Mor (f . g)
+
+eta : (a -> b) -> (a -> b)
+eta f = \x => f x
+
+-- `f = \x => f x`
+ext : {f : a -> b} -> (eta f = f)
+ext = Refl
+
+-- `id . f = f`
+idCompLeftIdentity : (f : a -> b) -> Basics.id . f = f
+idCompLeftIdentity f = ext {f=f}
+
+morphismMapDef : (f : a -> b) -> (g : c -> a) -> map f (Mor g) = Mor (f . g)
+morphismMapDef f g = Refl
+
+implementation {a : Type} -> Functor (Morphism a) => VerifiedFunctor (Morphism a) where
+  -- Idris doesn't reduce `map id (Mor f)` to `Mor (id . f)` using the definition
+  -- so I tried making a lemma `morphismMapDef` to force it to
+  -- but then when that lemma is introduced it gets reduced to a weaker statement
+  -- So one thing is too reduced, the other is not reduced enough...
+  -- It's also reduced `leftId : f . id = f` to `leftId : \x => f x = f`
+  mapId (Mor f) =
+    let shed = morphismMapDef Basics.id f
+        leftId = idCompLeftIdentity f
+    in ?help
+
+  mapComp (Mor f) g h = ?help2
