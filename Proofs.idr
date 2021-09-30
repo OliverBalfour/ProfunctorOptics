@@ -92,11 +92,11 @@ rev2Injective xs ys prf =
 public export
 interface Functor f => VerifiedFunctor (f : Type -> Type) where
   mapId : (x : f a)
-    -> map {f=f} Basics.id x = x
+    -> map {f=f} (\x => x) x = x
   mapComp : (x : f a) -> (g : b -> c) -> (h : a -> b)
     -> map (g . h) x = (map {f=f} g . map {f=f} h) x
 
-mapIdIsId : (xs : List a) -> map Basics.id xs = xs
+mapIdIsId : (xs : List a) -> map (\x => x) xs = xs
 mapIdIsId [] = Refl
 mapIdIsId (x::xs) =
   let iH = mapIdIsId xs
@@ -130,12 +130,12 @@ eta : (a -> b) -> (a -> b)
 eta f = \x => f x
 
 -- `f = \x => f x`
-ext : {f : a -> b} -> (eta f = f)
-ext = Refl
+ext : (f : a -> b) -> (eta f = f)
+ext f = Refl
 
 -- `id . f = f`
-idCompLeftIdentity : (f : a -> b) -> Basics.id . f = f
-idCompLeftIdentity f = ext {f=f}
+idCompLeftIdentity : (f : a -> b) -> (\x => x) . f = f
+idCompLeftIdentity f = ext f
 
 morphismMapDef : (f : a -> b) -> (g : c -> a) -> map f (Mor g) = Mor (f . g)
 morphismMapDef f g = Refl
@@ -147,7 +147,7 @@ implementation {a : Type} -> Functor (Morphism a) => VerifiedFunctor (Morphism a
   -- So one thing is too reduced, the other is not reduced enough...
   -- It's also reduced `leftId : f . id = f` to `leftId : \x => f x = f`
   mapId (Mor f) =
-    let shed = morphismMapDef Basics.id f
+    let shed = morphismMapDef (\x => x) f
         leftId = idCompLeftIdentity f
     in ?help
 
