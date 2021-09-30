@@ -124,35 +124,6 @@ implementation VApplicative List where
         in rewrite fcomp bs m a
         in Refl
 
-    -- case ws of
-    -- [] => rewrite splatRightNil vs in
-    --   rewrite splatRightNil us in
-    --     rewrite splatRightNil (splat (fmap (.) us ++ []) vs) in
-    --       Refl
-    -- (w::ws') => let iH = acomp us vs ws' in case vs of
-    --   [] => rewrite splatRightNil us in
-    --     -- Idris won't rewrite for some reason even though it's *definitely*
-    --     -- correct
-    --     believe_me () -- rewrite splatRightNil (fmap (.) us ++ []) in Refl
-    --   (v::vs') => ?help
-    --     -- case us of
-    --     --   [] => Refl
-    --     --   (u::us') => cong (u (v w) ::) (
-    --     --     let iH2 = acomp us' vs' ws' in ?help
-    --     --     )
-    -- where
-    --   splatRightNil : (fs : List (p -> q)) -> splat fs [] = []
-    --   splatRightNil [] = Refl
-    --   splatRightNil (f::fs) = splatRightNil fs
-  -- acomp [] v w = Refl
-  -- acomp (u::us) vs ws =
-  --   let iH = acomp us vs ws
-  --   in case vs of
-  --     [] => rewrite sym iH in Refl
-  --     (v::vs') => let iH2 = acomp us vs' ws in case ws of
-  --       [] => ?help
-  --       (w::ws') => cong (u (v w)::) ?help2
-
 public export
 implementation VFunctor Maybe where
   fmap f (Just x) = Just (f x)
