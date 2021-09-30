@@ -67,7 +67,7 @@ implementation Cocartesian Morphism where
     Right a => Right (f a))
 
 public export
-implementation Monoidal (~>) where
+implementation Monoidal Morphism where
   par (Mor f) (Mor g) = Mor (\(x, y) => (f x, g y))
   empty = Mor (const ())
 
