@@ -19,7 +19,7 @@ public export
 
 -- Morphisms in a Kleisli category
 public export
-record Kleislimorphism (f : Type -> Type) a b where
+record KleisliMorphism (f : Type -> Type) a b where
   constructor Kleisli
   applyKleisli : a -> f b
 
@@ -27,7 +27,7 @@ infixr 1 ~~>
 
 public export
 (~~>) : {f : Type -> Type} -> Type -> Type -> Type
-(~~>) = Kleislimorphism f
+(~~>) = KleisliMorphism f
 
 -- Helpers
 
@@ -44,3 +44,11 @@ ext f = Refl
 public export
 idCompLeftId : (f : a -> b) -> (\x => x) . f = f
 idCompLeftId f = ext f
+
+public export
+extensionality : (f, g : a -> b) -> ((x : a) -> f x = g x) -> f = g
+extensionality f g x = believe_me ()
+
+public export
+extensionality' : {f, g : a -> b} -> ((x : a) -> f x = g x) -> f = g
+extensionality' {f} {g} prf = extensionality f g prf
