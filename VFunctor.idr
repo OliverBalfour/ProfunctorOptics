@@ -5,6 +5,10 @@ import Morphism
 import Data.Vect
 
 %default total
+%hide Applicative
+%hide (<*>)
+
+infixl 4 <*>
 
 -- Verified functors
 public export
@@ -18,16 +22,17 @@ interface VFunctor (f : Type -> Type) where
 public export
 interface VFunctor f => VApplicative (f : Type -> Type) where
   ret : a -> f a
-  splat : f (a -> b) -> (f a -> f b)
-  aid : (v : f a) -> ret (\x => x) `splat` v = v
+  (<*>) : f (a -> b) -> (f a -> f b)
+  aid : (v : f a) -> ret (\x => x) <*> v = v
   ahom : (g : a -> b) -> (x : a)
-    -> ret g `splat` ret x = ret (g x)
+    -> ret g <*> ret x = ret (g x)
   aint : (u : f (a -> b)) -> (y : a)
-    -> u `splat` ret y = ret ($ y) `splat` u
+    -> u <*> ret y = ret ($ y) <*> u
   acomp : (u : f (b -> c)) -> (v : f (a -> b)) -> (w : f a)
-    -> ((ret (.) `splat` u) `splat` v) `splat` w = u `splat` (v `splat` w)
-  -- afmap : (g : a -> b) -> (x : f a) -> ret g `splat` x = g `fmap` x
-  -- afmap g x = believe_me ()
+    -> ((ret (.) <*> u) <*> v) <*> w = u <*> (v <*> w)
+  -- As lawful fmap implementations are unique and `fmap f x = pure f <*> x`
+  -- satisfies functor laws, this is always true
+  -- afmap : (g : a -> b) -> (x : f a) -> ret g <*> x = g `fmap` x
 
 public export
 implementation VFunctor List where
@@ -53,8 +58,8 @@ concatAssoc (x::xs) ys zs = cong (x::) (concatAssoc xs ys zs)
 public export
 implementation VApplicative List where
   ret = (::[])
-  splat [] xs = []
-  splat (f::fs) xs = fmap f xs ++ splat fs xs
+  (<*>) [] xs = []
+  (<*>) (f::fs) xs = fmap f xs ++ (fs <*> xs)
   aid [] = Refl
   aid (x::xs) =
     let iH = aid xs
@@ -68,61 +73,61 @@ implementation VApplicative List where
     let iH = aint us y
     in cong (u y::) iH
   acomp us vs ws =
-    let elimNil : (splat (splat (fmap (.) us ++ []) vs) ws = splat (splat (fmap (.) us) vs) ws)
-        elimNil = cong (\x => splat (splat x vs) ws) (nilRightId (fmap (.) us))
+    let elimNil : (((fmap (.) us ++ []) <*> vs) <*> ws = ((fmap (.) us) <*> vs) <*> ws)
+        elimNil = cong (\x => (x <*> vs) <*> ws) (nilRightId (fmap (.) us))
     in rewrite elimNil in
-      -- Goal: splat (splat (fmap (.) us) vs) ws = splat us (splat vs ws)
+      -- Goal: ((fmap (.) <*> us) vs) <*> ws = us <*> (vs <*> ws)
       case us of
         [] => Refl
         (u::us') => let iH = acomp us' vs ws in
           let l1 : List (a -> c)
               l1 = fmap ((.) u) vs
               l2 : List (a -> c)
-              l2 = splat (fmap (.) us') vs
-              step : (splat (l1 ++ l2) ws = splat l1 ws ++ splat l2 ws)
+              l2 = (fmap (.) us') <*> vs
+              step : ((l1 ++ l2) <*> ws = (l1 <*> ws) ++ (l2 <*> ws))
               step = concatHom l1 l2 ws
-              elimNil2 : (fmap u (splat vs ws) ++ splat (splat (fmap (.) us' ++ []) vs) ws = fmap u (splat vs ws) ++ splat (splat (fmap (.) us') vs) ws)
-              elimNil2 = cong (\x => fmap u (splat vs ws) ++ splat (splat x vs) ws) (nilRightId (fmap (.) us'))
-              prf : (splat (l1 ++ l2) ws = fmap u (splat vs ws) ++ splat us' (splat vs ws))
+              elimNil2 : (fmap u (vs <*> ws) ++ (<*>) ((fmap (.) us' ++ []) <*> vs) ws = fmap u (vs <*> ws) ++ (((fmap (.) us') <*> vs) <*> ws))
+              elimNil2 = cong (\x => fmap u (vs <*> ws) ++ (<*>) (x <*> vs) ws) (nilRightId (fmap (.) us'))
+              prf : ((l1 ++ l2) <*> ws = fmap u (vs <*> ws) ++ (us' <*> (vs <*> ws)))
               prf = rewrite step in rewrite sym iH in rewrite elimNil2 in
-                cong (++ splat (splat (fmap (.) us') vs) ws) (
-                  -- Goal: (splat (fmap ((.) u) vs) ws = fmap u (splat vs ws))
+                cong (++ (((fmap (.) us') <*> vs) <*> ws)) (
+                  -- Goal: ((fmap ((.) u) vs) <*> ws = fmap u (vs <*> ws))
                   case vs of
                     [] => Refl
                     (v::vs') =>
                       let iH2 = acomp us' vs' ws
-                          step2 : (splat (fmap ((.) u) vs') ws = fmap u (splat vs' ws))
-                          step2 = splatLemma u vs' ws
-                          step3 : (fmap (u . v) ws ++ splat (fmap ((.) u) vs') ws = fmap (u . v) ws ++ fmap u (splat vs' ws))
+                          step2 : ((<*>) (fmap ((.) u) vs') ws = fmap u (vs' <*> ws))
+                          step2 = apLemma u vs' ws
+                          step3 : (fmap (u . v) ws ++ (<*>) (fmap ((.) u) vs') ws = fmap (u . v) ws ++ fmap u (vs' <*> ws))
                           step3 = cong (fmap (u . v) ws ++) step2
-                          step4 : (fmap (u . v) ws ++ fmap u (splat vs' ws) = fmap u (fmap v ws) ++ fmap u (splat vs' ws))
+                          step4 : (fmap (u . v) ws ++ fmap u (vs' <*> ws) = fmap u (fmap v ws) ++ fmap u (vs' <*> ws))
                           step4 = rewrite fcomp ws u v in Refl
-                          step5 : (fmap u (fmap v ws) ++ fmap u (splat vs' ws) = fmap u (fmap v ws ++ splat vs' ws))
-                          step5 = fmapHom u (fmap v ws) (splat vs' ws)
-                          final : (fmap (u . v) ws ++ splat (fmap ((.) u) vs') ws = fmap u (fmap v ws ++ splat vs' ws))
+                          step5 : (fmap u (fmap v ws) ++ fmap u (vs' <*> ws) = fmap u (fmap v ws ++ (vs' <*> ws)))
+                          step5 = fmapHom u (fmap v ws) (vs' <*> ws)
+                          final : (fmap (u . v) ws ++ ((fmap ((.) u) vs') <*> ws) = fmap u (fmap v ws ++ (vs' <*> ws)))
                           final = (step3 `trans` step4) `trans` step5
                       in final
                   )
           in prf
     where
-      splatRightNil : (fs : List (p -> q)) -> splat fs [] = []
-      splatRightNil [] = Refl
-      splatRightNil (f::fs) = splatRightNil fs
+      apRightNil : (fs : List (p -> q)) -> fs <*> [] = []
+      apRightNil [] = Refl
+      apRightNil (f::fs) = apRightNil fs
       concatHom : (as, bs : List (p -> q)) -> (xs : List p)
-          -> (as ++ bs) `splat` xs = (as `splat` xs) ++ (bs `splat` xs)
+          -> (as ++ bs) <*> xs = (as <*> xs) ++ (bs <*> xs)
       concatHom [] bs xs = Refl
       concatHom (a::as) bs xs = rewrite concatHom as bs xs in
-        concatAssoc (fmap a xs) (splat as xs) (splat bs xs)
+        concatAssoc (fmap a xs) (as <*> xs) (bs <*> xs)
       fmapHom : (m : p -> q) -> (as, bs : List p)
         -> fmap m as ++ fmap m bs = fmap m (as ++ bs)
       fmapHom m [] bs = Refl
       fmapHom m (a::as) bs = rewrite fmapHom m as bs in Refl
-      splatLemma : (m : q -> r) -> (as : List (p -> q)) -> (bs : List p)
-        -> (splat (fmap ((.) m) as) bs = fmap m (splat as bs))
-      splatLemma m [] bs = Refl
-      splatLemma m (a::as) bs =
-        let iH = splatLemma m as bs
-        in rewrite sym (fmapHom m (fmap a bs) (splat as bs))
+      apLemma : (m : q -> r) -> (as : List (p -> q)) -> (bs : List p)
+        -> ((fmap ((.) m) as) <*> bs = fmap m (as <*> bs))
+      apLemma m [] bs = Refl
+      apLemma m (a::as) bs =
+        let iH = apLemma m as bs
+        in rewrite sym (fmapHom m (fmap a bs) (as <*> bs))
         in rewrite sym iH
         in rewrite fcomp bs m a
         in Refl
@@ -139,8 +144,8 @@ implementation VFunctor Maybe where
 public export
 implementation VApplicative Maybe where
   ret = Just
-  splat (Just f) (Just x) = Just (f x)
-  splat _ _ = Nothing
+  (<*>) (Just f) (Just x) = Just (f x)
+  (<*>) _ _ = Nothing
   aid (Just x) = Refl
   aid Nothing = Refl
   ahom g x = Refl
@@ -163,9 +168,9 @@ implementation {a:Type} -> VFunctor (Either a) where
 public export
 implementation {a:Type} -> VApplicative (Either a) where
   ret = Right
-  splat (Right f) (Right x) = Right (f x)
-  splat (Left x) y = Left x
-  splat _ (Left x) = Left x
+  (<*>) (Right f) (Right x) = Right (f x)
+  (<*>) (Left x) y = Left x
+  (<*>) _ (Left x) = Left x
   aid (Left x) = Refl
   aid (Right x) = Refl
   ahom g x = Refl
@@ -192,7 +197,7 @@ implementation {a:Type} -> VFunctor (Morphism a) where
 public export
 implementation {a:Type} -> VApplicative (Morphism a) where
   ret x = Mor (const x)
-  splat (Mor f) (Mor g) = Mor (\x => f x (g x))
+  (<*>) (Mor f) (Mor g) = Mor (\x => f x (g x))
   aid (Mor x) = Refl
   ahom g x = Refl
   aint (Mor f) y = Refl
@@ -217,7 +222,7 @@ vectPlusZero xs = replace {p = \prf => Vect prf a} (plusZeroRightId n) xs
 -- TODO: VApplicative (Vect n)
 -- This requires vectNilRightId : (xs : Vect n a) -> xs ++ [] = xs
 -- This doesn't work because Idris can't resolve len ~ plus len 0 in the body,
--- but len is inaccessible so we can't do anything
+-- but len is inaccessible so we can't use vectPlusZero to help us
 -- vectNilRightId : (xs : Vect n a) -> vectPlusZero (xs ++ []) = xs
 -- vectNilRightId [] = Refl
 -- vectNilRightId (x::xs) = cong (x::) (vectNilRightId xs)
