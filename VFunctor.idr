@@ -2,6 +2,7 @@
 module VFunctor
 
 import Morphism
+import Data.Vect
 
 %default total
 
@@ -158,6 +159,23 @@ implementation {a:Type} -> VFunctor (Either a) where
   fcomp (Right x) g h = Refl
 
 public export
+implementation {a:Type} -> VApplicative (Either a) where
+  ret = Right
+  splat (Right f) (Right x) = Right (f x)
+  splat (Left x) y = Left x
+  splat _ (Left x) = Left x
+  aid (Left x) = Refl
+  aid (Right x) = Refl
+  ahom g x = Refl
+  aint (Left x) y = Refl
+  aint (Right x) y = Refl
+  acomp (Right u) (Right v) (Right w) = Refl
+  acomp (Left _) _ _ = Refl
+  acomp (Right u) (Left x) _ = Refl
+  acomp (Right u) (Right v) (Left x) = Refl
+
+-- (a,) is only an applicative if a is a monoid
+public export
 implementation {a:Type} -> VFunctor (a,) where
   fmap f (x, y) = (x, f y)
   fid (x, y) = Refl
@@ -168,3 +186,78 @@ implementation {a:Type} -> VFunctor (Morphism a) where
   fmap f (Mor g) = Mor (f . g)
   fid (Mor f) = cong Mor (sym (ext f))
   fcomp (Mor f) g h = Refl
+
+public export
+implementation {a:Type} -> VApplicative (Morphism a) where
+  ret x = Mor (const x)
+  splat (Mor f) (Mor g) = Mor (\x => f x (g x))
+  aid (Mor x) = Refl
+  ahom g x = Refl
+  aint (Mor f) y = Refl
+  acomp (Mor u) (Mor v) (Mor w) = Refl
+
+public export
+implementation {n:Nat} -> VFunctor (Vect n) where
+  fmap f [] = []
+  fmap f (x::xs) = f x :: fmap f xs
+  fid [] = Refl
+  fid (x::xs) = cong (x::) (fid xs)
+  fcomp [] g h = Refl
+  fcomp (x::xs) g h = cong (g (h x) ::) (fcomp xs g h)
+
+plusZeroRightId : (n : Nat) -> n + 0 = n
+plusZeroRightId Z = Refl
+plusZeroRightId (S n) = rewrite plusZeroRightId n in Refl
+
+-- Morally vectNilRightId : (xs : Vect n a) -> xs ++ [] = xs
+vectNilRightId
+  : (xs : Vect n a)  
+    -> xs ++ [] = (replace {p = \prf => Vect prf a}
+                    (sym $ plusZeroRightId n) xs)
+vectNilRightId [] = Refl
+vectNilRightId (x::xs) = rewrite vectNilRightId xs in ?help -- Refl
+  -- in replace {p = \prf => Vect prf a} (sym $ plusZeroRightId n) (x::xs)
+
+-- TODO: VApplicative (Vect n)
+-- This requires nilRightIdVect : (xs : Vect n a) -> xs ++ [] = xs
+
+public export
+data BTree : Type -> Type where
+  Null : BTree a
+  Node : BTree a -> a -> BTree a -> BTree a
+
+public export
+implementation VFunctor BTree where
+  fmap f Null = Null
+  fmap f (Node l x r) = Node (fmap f l) (f x) (fmap f r)
+  fid Null = Refl
+  fid (Node l x r) =
+    let iH1 = fid l
+        iH2 = fid r
+    in rewrite iH1
+    in rewrite iH2
+    in Refl
+  fcomp Null g h = Refl
+  fcomp (Node l x r) g h =
+    let iH1 = fcomp l g h
+        iH2 = fcomp r g h
+    in rewrite iH1
+    in rewrite iH2
+    in Refl
+
+public export
+data RTree : Type -> Type where
+  Leaf : a -> RTree a
+  Branch : List (RTree a) -> RTree a
+
+public export
+implementation VFunctor RTree where
+  fmap f (Leaf x) = Leaf (f x)
+  -- This definition is more concise but Idris can't tell it's total:
+  -- fmap f (Branch bs) = Branch (fmap (fmap f) bs)
+  fmap f (Branch bs) = Branch (branches f bs) where
+    branches : (a -> b) -> List (RTree a) -> List (RTree b)
+    branches f [] = []
+    branches f (b::bs) = fmap f b :: branches f bs
+  fid = ?help2
+  fcomp a b = ?help3
