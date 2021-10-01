@@ -209,17 +209,16 @@ plusZeroRightId : (n : Nat) -> n + 0 = n
 plusZeroRightId Z = Refl
 plusZeroRightId (S n) = rewrite plusZeroRightId n in Refl
 
--- Morally vectNilRightId : (xs : Vect n a) -> xs ++ [] = xs
-vectNilRightId
-  : (xs : Vect n a)  
-    -> xs ++ [] = (replace {p = \prf => Vect prf a}
-                    (sym $ plusZeroRightId n) xs)
-vectNilRightId [] = Refl
-vectNilRightId (x::xs) = rewrite vectNilRightId xs in ?help -- Refl
-  -- in replace {p = \prf => Vect prf a} (sym $ plusZeroRightId n) (x::xs)
+vectPlusZero : {n : Nat} -> Vect (plus n 0) a -> Vect n a
+vectPlusZero xs = replace {p = \prf => Vect prf a} (plusZeroRightId n) xs
 
 -- TODO: VApplicative (Vect n)
--- This requires nilRightIdVect : (xs : Vect n a) -> xs ++ [] = xs
+-- This requires vectNilRightId : (xs : Vect n a) -> xs ++ [] = xs
+-- This doesn't work because Idris can't resolve len ~ plus len 0 in the body,
+-- but len is inaccessible so we can't do anything
+-- vectNilRightId : (xs : Vect n a) -> vectPlusZero (xs ++ []) = xs
+-- vectNilRightId [] = Refl
+-- vectNilRightId (x::xs) = cong (x::) (vectNilRightId xs)
 
 public export
 data BTree : Type -> Type where
