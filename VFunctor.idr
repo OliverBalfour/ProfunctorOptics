@@ -16,7 +16,7 @@ interface VFunctor (f : Type -> Type) where
     -> fmap (g . h) x = (fmap g . fmap h) x
 
 public export
-interface VApplicative (f : Type -> Type) where
+interface VFunctor f => VApplicative (f : Type -> Type) where
   ret : a -> f a
   splat : f (a -> b) -> (f a -> f b)
   aid : (v : f a) -> ret (\x => x) `splat` v = v
@@ -26,6 +26,8 @@ interface VApplicative (f : Type -> Type) where
     -> u `splat` ret y = ret ($ y) `splat` u
   acomp : (u : f (b -> c)) -> (v : f (a -> b)) -> (w : f a)
     -> ((ret (.) `splat` u) `splat` v) `splat` w = u `splat` (v `splat` w)
+  -- afmap : (g : a -> b) -> (x : f a) -> ret g `splat` x = g `fmap` x
+  -- afmap g x = believe_me ()
 
 public export
 implementation VFunctor List where
@@ -249,14 +251,29 @@ data RTree : Type -> Type where
   Leaf : a -> RTree a
   Branch : List (RTree a) -> RTree a
 
+-- These are for VFunctor RTree but had to be pulled out so branches
+-- could be used in a proof about fmap as well as fmap
+mutual
+  branches : (a -> b) -> List (RTree a) -> List (RTree b)
+  branches f [] = []
+  branches f (b::bs) = fmapRTree f b :: branches f bs
+
+  fmapRTree : (a -> b) -> (RTree a) -> (RTree b)
+  fmapRTree f (Leaf x) = Leaf (f x)
+  fmapRTree f (Branch bs) = Branch (branches f bs)
+
 public export
 implementation VFunctor RTree where
-  fmap f (Leaf x) = Leaf (f x)
-  -- This definition is more concise but Idris can't tell it's total:
-  -- fmap f (Branch bs) = Branch (fmap (fmap f) bs)
-  fmap f (Branch bs) = Branch (branches f bs) where
-    branches : (a -> b) -> List (RTree a) -> List (RTree b)
-    branches f [] = []
-    branches f (b::bs) = fmap f b :: branches f bs
-  fid = ?help2
-  fcomp a b = ?help3
+  fmap = fmapRTree
+  fid (Leaf x) = Refl
+  fid (Branch bs) = cong Branch (prf bs) where
+    prf : (bs : List (RTree a)) -> branches (\x => x) bs = bs
+    prf [] = Refl
+    prf (b::bs) = rewrite prf bs in cong (::bs) (fid b)
+  fcomp (Leaf x) g h = Refl
+  fcomp (Branch bs) g h = cong Branch (prf bs g h) where
+    prf : (bs : List (RTree a)) -> (g : b -> c) -> (h : a -> b)
+      -> (branches (g . h) bs = branches g (branches h bs))
+    prf [] g h = Refl
+    prf (b::bs) g h = rewrite prf bs g h
+      in cong (:: branches g (branches h bs)) (fcomp b g h)
