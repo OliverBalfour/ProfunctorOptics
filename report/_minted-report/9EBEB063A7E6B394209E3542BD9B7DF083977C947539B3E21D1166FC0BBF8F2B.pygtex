@@ -1,0 +1,11 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+	\PYG{c+c1}{\PYGZhy{}\PYGZhy{} forall n : Nat. n + 0 = n}
+	\PYG{n+nf}{natPlusZeroId} \PYG{o+ow}{:} \PYG{o+ow}{(}n \PYG{o+ow}{:} \PYG{k+kt}{Nat}\PYG{o+ow}{)} \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} n \PYG{o+ow}{+} \PYG{l+m+mi}{0} \PYG{o+ow}{=} n
+	natPlusZeroId \PYG{k+kt}{Z} \PYG{o+ow}{=} \PYG{k+kt}{Refl}
+	natPlusZeroId \PYG{o+ow}{(}\PYG{k+kt}{S} n\PYG{o+ow}{)} \PYG{o+ow}{=} cong \PYG{k+kt}{S} \PYG{o+ow}{(}natPlusZeroId n\PYG{o+ow}{)}
+	
+	\PYG{c+c1}{\PYGZhy{}\PYGZhy{} forall xs : List a. xs ++ [] = xs}
+	\PYG{n+nf}{listConcatRightNilId} \PYG{o+ow}{:} \PYG{o+ow}{(}xs \PYG{o+ow}{:} \PYG{k+kt}{List} a\PYG{o+ow}{)} \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} xs \PYG{o+ow}{++} \PYG{o+ow}{[]} \PYG{o+ow}{=} xs
+	listConcatRightNilId \PYG{o+ow}{[]} \PYG{o+ow}{=} \PYG{k+kt}{Refl}
+	listConcatRightNilId \PYG{o+ow}{(}x\PYG{o+ow}{::}xs\PYG{o+ow}{)} \PYG{o+ow}{=} cong \PYG{o+ow}{(}x\PYG{o+ow}{::)} \PYG{o+ow}{(}listConcatRightNilId xs\PYG{o+ow}{)}
+\end{Verbatim}

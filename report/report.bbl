@@ -1,0 +1,304 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.1 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated as
+% required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+\datalist[entry]{nyt/global//global/global}
+  \entry{boisseau2018yoneda}{article}{}
+    \name{author}{2}{}{%
+      {{hash=BG}{%
+         family={Boisseau},
+         familyi={B\bibinitperiod},
+         given={Guillaume},
+         giveni={G\bibinitperiod},
+      }}%
+      {{hash=GJ}{%
+         family={Gibbons},
+         familyi={G\bibinitperiod},
+         given={Jeremy},
+         giveni={J\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {ACM New York, NY, USA}%
+    }
+    \strng{namehash}{BGGJ1}
+    \strng{fullhash}{BGGJ1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{labelyear}{2018}
+    \field{labeldatesource}{}
+    \field{sortinit}{B}
+    \field{sortinithash}{B}
+    \field{number}{ICFP}
+    \field{pages}{1\bibrangedash 27}
+    \field{title}{What you needa know about Yoneda: Profunctor optics and the
+  Yoneda Lemma (functional pearl)}
+    \field{volume}{2}
+    \field{journaltitle}{Proceedings of the ACM on Programming Languages}
+    \field{year}{2018}
+  \endentry
+
+  \entry{brady2021qtt}{article}{}
+    \name{author}{1}{}{%
+      {{hash=BE}{%
+         family={Brady},
+         familyi={B\bibinitperiod},
+         given={Edwin},
+         giveni={E\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{BE1}
+    \strng{fullhash}{BE1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{labelyear}{2021}
+    \field{labeldatesource}{}
+    \field{sortinit}{B}
+    \field{sortinithash}{B}
+    \field{title}{Idris 2: Quantitative Type Theory in Practice}
+    \field{journaltitle}{arXiv preprint arXiv:2104.00480}
+    \field{year}{2021}
+  \endentry
+
+  \entry{dowek1993undecidability}{inproceedings}{}
+    \name{author}{1}{}{%
+      {{hash=DG}{%
+         family={Dowek},
+         familyi={D\bibinitperiod},
+         given={Gilles},
+         giveni={G\bibinitperiod},
+      }}%
+    }
+    \list{organization}{1}{%
+      {Springer}%
+    }
+    \strng{namehash}{DG1}
+    \strng{fullhash}{DG1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{labelyear}{1993}
+    \field{labeldatesource}{}
+    \field{sortinit}{D}
+    \field{sortinithash}{D}
+    \field{booktitle}{International Conference on Typed Lambda Calculi and
+  Applications}
+    \field{pages}{139\bibrangedash 145}
+    \field{title}{The undecidability of typability in the
+  $\lambda\Pi$-calculus}
+    \field{year}{1993}
+  \endentry
+
+  \entry{foster2005combinators}{article}{}
+    \name{author}{5}{}{%
+      {{hash=FJN}{%
+         family={Foster},
+         familyi={F\bibinitperiod},
+         given={J\bibnamedelima Nathan},
+         giveni={J\bibinitperiod\bibinitdelim N\bibinitperiod},
+      }}%
+      {{hash=GMB}{%
+         family={Greenwald},
+         familyi={G\bibinitperiod},
+         given={Michael\bibnamedelima B},
+         giveni={M\bibinitperiod\bibinitdelim B\bibinitperiod},
+      }}%
+      {{hash=MJT}{%
+         family={Moore},
+         familyi={M\bibinitperiod},
+         given={Jonathan\bibnamedelima T},
+         giveni={J\bibinitperiod\bibinitdelim T\bibinitperiod},
+      }}%
+      {{hash=PBC}{%
+         family={Pierce},
+         familyi={P\bibinitperiod},
+         given={Benjamin\bibnamedelima C},
+         giveni={B\bibinitperiod\bibinitdelim C\bibinitperiod},
+      }}%
+      {{hash=SA}{%
+         family={Schmitt},
+         familyi={S\bibinitperiod},
+         given={Alan},
+         giveni={A\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {ACM New York, NY, USA}%
+    }
+    \strng{namehash}{FJN+1}
+    \strng{fullhash}{FJNGMBMJTPBCSA1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{labelyear}{2005}
+    \field{labeldatesource}{}
+    \field{sortinit}{F}
+    \field{sortinithash}{F}
+    \field{number}{1}
+    \field{pages}{233\bibrangedash 246}
+    \field{title}{Combinators for bi-directional tree transformations: a
+  linguistic approach to the view update problem}
+    \field{volume}{40}
+    \field{journaltitle}{ACM SIGPLAN Notices}
+    \field{year}{2005}
+  \endentry
+
+  \entry{ISO:CPP}{book}{}
+    \name{author}{1}{}{%
+      {{hash=I}{%
+         family={{ISO}},
+         familyi={I\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {International Organization for Standardization}%
+    }
+    \keyw{C++ Specification Standard}
+    \strng{namehash}{I1}
+    \strng{fullhash}{I1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{labelyear}{2020}
+    \field{labeldatesource}{}
+    \field{sortinit}{I}
+    \field{sortinithash}{I}
+    \field{title}{{ISO/IEC 14882:2020 Information technology --- Programming
+  languages --- C++}}
+    \verb{url}
+    \verb https://www.iso.org/standard/79358.html
+    \endverb
+    \list{location}{1}{%
+      {Geneva, Switzerland}%
+    }
+    \field{month}{02}
+    \field{year}{2020}
+  \endentry
+
+  \entry{mac1970categories}{book}{}
+    \name{author}{1}{}{%
+      {{hash=MLS}{%
+         family={Mac\bibnamedelima Lane},
+         familyi={M\bibinitperiod\bibinitdelim L\bibinitperiod},
+         given={Saunders},
+         giveni={S\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {Springer-Verlag New York}%
+    }
+    \strng{namehash}{MLS1}
+    \strng{fullhash}{MLS1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{labelyear}{1970}
+    \field{labeldatesource}{}
+    \field{sortinit}{M}
+    \field{sortinithash}{M}
+    \field{edition}{2}
+    \field{title}{Categories for the working mathematician}
+    \field{year}{1970}
+  \endentry
+
+  \entry{milewski2017profunctor}{online}{}
+    \name{author}{1}{}{%
+      {{hash=MB}{%
+         family={Milewski},
+         familyi={M\bibinitperiod},
+         given={Bartosz},
+         giveni={B\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{MB1}
+    \strng{fullhash}{MB1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{labelyear}{2017}
+    \field{labeldatesource}{}
+    \field{sortinit}{M}
+    \field{sortinithash}{M}
+    \field{title}{Profunctor Optics: The Categorical View}
+    \verb{url}
+    \verb https://bartoszmilewski.com/2017/07/07/profunctor-optics-the-categori
+    \verb cal-view/
+    \endverb
+    \field{year}{2017}
+    \field{urlday}{07}
+    \field{urlmonth}{07}
+    \field{urlyear}{2017}
+  \endentry
+
+  \entry{pickering2017profunctor}{article}{}
+    \name{author}{3}{}{%
+      {{hash=PM}{%
+         family={Pickering},
+         familyi={P\bibinitperiod},
+         given={Matthew},
+         giveni={M\bibinitperiod},
+      }}%
+      {{hash=GJ}{%
+         family={Gibbons},
+         familyi={G\bibinitperiod},
+         given={Jeremy},
+         giveni={J\bibinitperiod},
+      }}%
+      {{hash=WN}{%
+         family={Wu},
+         familyi={W\bibinitperiod},
+         given={Nicolas},
+         giveni={N\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{PMGJWN1}
+    \strng{fullhash}{PMGJWN1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{labelyear}{2017}
+    \field{labeldatesource}{}
+    \field{sortinit}{P}
+    \field{sortinithash}{P}
+    \field{title}{Profunctor optics: Modular data accessors}
+    \field{journaltitle}{arXiv preprint arXiv:1703.10857}
+    \field{year}{2017}
+  \endentry
+
+  \entry{wadler2015propositions}{article}{}
+    \name{author}{1}{}{%
+      {{hash=WP}{%
+         family={Wadler},
+         familyi={W\bibinitperiod},
+         given={Philip},
+         giveni={P\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {ACM New York, NY, USA}%
+    }
+    \strng{namehash}{WP1}
+    \strng{fullhash}{WP1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{labelyear}{2015}
+    \field{labeldatesource}{}
+    \field{sortinit}{W}
+    \field{sortinithash}{W}
+    \field{number}{12}
+    \field{pages}{75\bibrangedash 84}
+    \field{title}{Propositions as types}
+    \field{volume}{58}
+    \field{journaltitle}{Communications of the ACM}
+    \field{year}{2015}
+  \endentry
+\enddatalist
+\endinput

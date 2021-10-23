@@ -1,0 +1,11 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+	\PYG{n+nf}{fact} \PYG{o+ow}{:} \PYG{k+kt}{Nat} \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} \PYG{k+kt}{Nat}
+	fact \PYG{k+kt}{Z} \PYG{o+ow}{=} \PYG{l+m+mi}{1}
+	fact \PYG{o+ow}{(}\PYG{k+kt}{S} n\PYG{o+ow}{)} \PYG{o+ow}{=} \PYG{o+ow}{(}\PYG{k+kt}{S} n\PYG{o+ow}{)} \PYG{o+ow}{*} fact n
+	
+	\PYG{n+nf}{factTheorem} \PYG{o+ow}{:} fact \PYG{l+m+mi}{5} \PYG{o+ow}{=} \PYG{l+m+mi}{120}
+	factTheorem \PYG{o+ow}{=} \PYG{k+kt}{Refl}
+	
+	\PYG{n+nf}{factTheorem2} \PYG{o+ow}{:} \PYG{o+ow}{(}\PYG{k+kt}{S} n\PYG{o+ow}{)} \PYG{o+ow}{*} fact n \PYG{o+ow}{=} fact \PYG{o+ow}{(}\PYG{k+kt}{S} n\PYG{o+ow}{)}
+	factTheorem2 \PYG{o+ow}{=} \PYG{k+kt}{Refl}
+\end{Verbatim}

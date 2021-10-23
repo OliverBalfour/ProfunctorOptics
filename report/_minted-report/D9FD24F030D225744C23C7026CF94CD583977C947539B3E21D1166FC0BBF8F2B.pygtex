@@ -1,0 +1,16 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kr}{record} \PYG{k+kt}{Teacher} \PYG{k+kr}{where}
+  \PYG{k+kr}{constructor} \PYG{k+kt}{MkTeacher}
+  \PYG{n+nf}{name} \PYG{o+ow}{:} \PYG{k+kt}{String}
+
+\PYG{k+kr}{record} \PYG{k+kt}{Student} \PYG{k+kr}{where}
+  \PYG{k+kr}{constructor} \PYG{k+kt}{MkPerson}
+  \PYG{n+nf}{name} \PYG{o+ow}{:} \PYG{k+kt}{String}
+  \PYG{n+nf}{age} \PYG{o+ow}{:} \PYG{k+kt}{Int}
+  \PYG{n+nf}{email} \PYG{o+ow}{:} \PYG{k+kt}{String}
+  \PYG{n+nf}{teacher} \PYG{o+ow}{:} \PYG{k+kt}{Teacher}
+
+\PYG{n+nf}{changeTeacherName} \PYG{o+ow}{:} \PYG{k+kt}{String} \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} \PYG{k+kt}{Student} \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} \PYG{k+kt}{Student}
+changeTeacherName tname \PYG{o+ow}{(}\PYG{k+kt}{MkStudent} sname age email \PYG{o+ow}{(}\PYG{k+kt}{MkTeacher} \PYG{k+kr}{\PYGZus{}}\PYG{o+ow}{))} \PYG{o+ow}{=}
+  \PYG{k+kt}{MkStudent} sname age email \PYG{o+ow}{(}\PYG{k+kt}{MkTeacher} tname\PYG{o+ow}{)}
+\end{Verbatim}

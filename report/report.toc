@@ -1,0 +1,27 @@
+\boolfalse {citerequest}\boolfalse {citetracker}\boolfalse {pagetracker}\boolfalse {backtracker}\relax 
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{Introduction}{2}{section*.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{Background}{2}{section*.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{Idris}{3}{section*.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{Dependent Types}{3}{section*.5}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{Propositions as Types}{3}{section*.6}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{Proof Techniques}{4}{section*.7}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{Limitations}{5}{section*.8}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{Optics}{5}{section*.9}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{Functors}{6}{section*.10}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{Profunctors}{6}{section*.11}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{Profunctor Optics}{7}{section*.12}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{Related Work}{7}{section*.13}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{todo}{7}{section*.14}%

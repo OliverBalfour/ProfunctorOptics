@@ -5,6 +5,7 @@ import VFunctor
 import Morphism
 
 %default total
+%hide Applicative
 
 -- Verified profunctors
 
@@ -29,10 +30,30 @@ interface VProfunctor (p : Type -> Type -> Type) where
 
 -- Profunctors for product and sum types, and monoidal profunctors
 
+runit : (a, ()) -> a
+runit (x, ()) = x
+runit' : a -> (a, ())
+runit' x = (x, ())
+lunit : ((), a) -> a
+lunit ((), x) = x
+lunit' : a -> ((), a)
+lunit' x = ((), x)
+
+assoc : (a, (b, c)) -> ((a, b), c)
+assoc (x, (y, z)) = ((x, y), z)
+assoc' : ((a, b), c) -> (a, (b, c))
+assoc' ((x, y), z) = (x, (y, z))
+
 public export
 interface VProfunctor p => Cartesian p where
   first  : p a b -> p (a, c) (b, c)
   second : p a b -> p (c, a) (c, b)
+  cfirstunit : (h : p a b)
+    -> dimap VProfunctor.runit VProfunctor.runit' h = first h
+  -- csecondunit : (h : p a b)
+  --   -> dimap VProfunctor.runit VProfunctor.runit' h = second h
+  -- cfirstassoc : (h : p a b)
+  --   -> dimap VProfunctor.assoc VProfunctor.assoc' (first (first h)) = first h
 
 public export
 interface VProfunctor p => Cocartesian p where
@@ -52,10 +73,16 @@ implementation VProfunctor Morphism where
   pid (Mor f) = cong Mor (sym (ext f))
   pcomp (Mor x) f' f g g' = Refl
 
+unitIsUnit : (y : ()) -> y = ()
+unitIsUnit () = Refl
+
 public export
 implementation Cartesian Morphism where
   first (Mor f) = Mor (\(a, c) => (f a, c))
   second (Mor f) = Mor (\(c, a) => (c, f a))
+  cfirstunit (Mor f) = cong Mor (extensionality' (\(x, y) => rewrite unitIsUnit y in Refl))
+  -- csecondunit (Mor f) = cong Mor (extensionality' (\(x, y) => ?help))
+  -- cfirstassoc = ?help
 
 public export
 implementation Cocartesian Morphism where
