@@ -79,10 +79,10 @@ implementation Monoidal Morphism where
 public export
 implementation {k : Type -> Type} -> VFunctor k => VProfunctor (KleisliMorphism k) where
   dimap f g (Kleisli h) = Kleisli (fmap g . h . f)
-  -- this proof reduces to `fmap (\x => x) . f = f` for `f : a -> k b`
-  -- we can't make `fid : fmap (\x => x) = id` intensional instead of extensional
+  -- This proof reduces to `fmap (\x => x) . f = f` for `f : a -> k b`
+  -- We can't make `fid` intensional, ie `fid : fmap (\x => x) = id`,
   -- because we need something to pattern match on to prove fid, so we must use
   -- extensionality here
-  pid (Kleisli f) = cong Kleisli (extensionality' (\x => fid (f x)))
-  pcomp (Kleisli u) f' f g g' = cong Kleisli (extensionality' (\x =>
+  pid (Kleisli f) = cong Kleisli (extensionality (\x => fid (f x)))
+  pcomp (Kleisli u) f' f g g' = cong Kleisli (extensionality (\x =>
     fcomp (u (f' (f x))) g g'))
