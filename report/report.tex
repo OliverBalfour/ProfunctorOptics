@@ -121,7 +121,7 @@ A  is tabulated below.  $\Sigma$ types are encoded using a construct called depe
 	\texttt{p\ -\textgreater{}\ Void} \\
 	{$a=b$} & {$a=b$} & {\texttt{a = b}} \\
 	\bottomrule
-	\caption{A complete list of connectives and quantifiers. Note that the predicates in Idris are of the form \texttt{P\ :\ (x\ :\ a)\ -\textgreater{}\ Type} where \texttt{P\ x\ =\ ()} or \texttt{P\ x\ =\ Void}.}
+	\caption{Corresponding connectives and quantifiers. Note that the predicates in Idris are of the form \texttt{P\ :\ (x\ :\ a)\ -\textgreater{}\ Type} where \texttt{P\ x\ =\ ()} or \texttt{P\ x\ =\ Void}.}
 \end{longtable}
 
 \subsection{Proof Techniques}
@@ -173,9 +173,9 @@ Idris also provides a facility for rewriting the goal type using an equality. Fo
 	    p2
 \end{minted}
 
-Rewriting can be convenient, however using a number of rewrites makes proofs difficult to follow. Prelude functions such as \texttt{trans}, \texttt{sym}, \texttt{cong} and \texttt{replace} accomplish the same task in a more conventional proof structure.
+Rewriting can be convenient, however using a number of rewrites makes proofs difficult to follow. Prelude functions such as \texttt{trans}, \texttt{sym}, \texttt{cong} and \texttt{replace} can accomplish the same tasks with a more conventional proof structure.
 
-As intuitionistic logics do not have the law of the excluded middle or double negation, proof by contradiction is not possible. Instead, ex falso quodlibet, the principle of explosion, must be used. In some cases a function has cases which are not possible but must have a well-typed proof for those cases to satisfy the totality checker. In this case, rather than deriving a contradiction to show the state is not possible, the contradiction can be used with the function \texttt{void\ :\ Void\ ->\ a} to derive the proof goal.
+As intuitionistic logics do not have the law of the excluded middle or double negation, proof by contradiction is not possible. Instead, ex falso quodlibet, the principle of explosion, must be used. In some cases a function has cases which are not possible but well-typed proofs must exist for those cases to satisfy the totality checker. In this case, rather than deriving a contradiction to show the state is not possible, the contradiction can be used with the function \texttt{void\ :\ Void\ ->\ a} to derive the proof goal.
 
 \subsection{Limitations}
 
@@ -191,7 +191,7 @@ These limitations mean that many theorems of interest either cannot be proven or
 
 Optics are data accessors that ease reading and writing into composite data structures. Industrial programs tend to have very complex and deeply nested data structures, which makes tasks like copying and updating a single field in a deeply nested data structure in a functional style very cumbersome. Optics are an elegant solution to this problem. They are objects which represent a view into a field of a data structure which can be composed for nested structures and used to view and update the field they model.
 
-There are two common encodings of optics, van Laarhoven optics and profunctor optics. Most established implementations use the older van Laarhoven design, however these have many limitations. One of the principal benefits of optics is that they compose elegantly, however the van Laarhoven encoding makes a distinction between lenses (optics for product types) and prisms (optics for sum types) and does not allow composition of lenses and optics, so you cannot express an optic that reads and writes the integer in a `Maybe (Integer, String)`.
+There are two common encodings of optics, van Laarhoven optics and profunctor optics. Most established implementations use the older van Laarhoven design, however these have many limitations. One of the principal benefits of optics is that they compose elegantly, however the van Laarhoven encoding makes a distinction between lenses (optics for product types) and prisms (optics for sum types) and does not allow composition of lenses and optics, so you cannot express an optic that reads and writes the integer in a \texttt{Maybe (Integer, String)}.
 
 However, profunctor optics generalise optics to work around these issues. As with many other functional programming design patterns, they are inspired by category theory, specifically the notion of a profunctor. Profunctor optics are generic over the typeclass of profunctors, so they allow choice of profunctor in which to use an optic. This allows programmers to not just use optics to view and update, but to also accumulate side effects in the process.
 
