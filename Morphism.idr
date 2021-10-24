@@ -52,9 +52,3 @@ idCompLeftId f = ext f
 public export
 extensionality : {f, g : a -> b} -> ((x : a) -> f x = g x) -> f = g
 extensionality {f} {g} prf = believe_me ()
-
--- Alias for Prelude <*> which we hide
-infixl 4 <**>
-public export
-(<**>) : Applicative f => f (a -> b) -> f a -> f b
-(<**>) = (<*>)

@@ -85,14 +85,24 @@ inn : Either t (a, FunList a b (b -> t)) -> FunList a b t
 inn (Left t) = Done t
 inn (Right (x, l)) = More x l
 
-implementation Functor (FunList a b) where
-  map f (Done t) = Done (f t)
-  map f (More x l) = More x (map (f .) l)
+implementation {a : Type} -> {b : Type} -> VFunctor (FunList a b) where
+  fmap f (Done t) = Done (f t)
+  fmap f (More x l) = More x (fmap (f .) l)
+  fid (Done t) = Refl
+  fid (More x l) = cong (More x) (fid l)
+  fcomp (Done t) g h = Refl
+  fcomp (More x l) g h = cong (More x) (fcomp l (g .) (h .))
+  infixSame f x = Refl
 
-implementation Applicative (FunList a b) where
-  pure = Done
-  Done f <*> l = map f l
-  More x l <*> l2 = assert_total More x (map flip l <**> l2)
+implementation {a : Type} -> {b : Type} -> VApplicative (FunList a b) where
+  ret = Done
+  Done f <*> l = fmap f l
+  More x l <*> l2 = assert_total More x (fmap flip l <*> l2)
+  aid (Done t) = Refl
+  aid (More x l) = cong (More x) (aid l)
+  ahom g x = Refl
+  aint u y = believe_me () -- todo
+  acomp u v w = believe_me ()
 
 single : a -> FunList a b b
 single x = More x (Done id)
@@ -108,23 +118,6 @@ traverse k = assert_total dimap out inn (right (par k (traverse k)))
 
 makeTraversal : (s -> FunList a b t) -> Traversal a b s t
 makeTraversal h k = dimap h fuse (traverse k)
-
--- Dependently typed version of FunList (they're both isomorphic to ∃n. A^n x (B^n -> T))
--- I should use (n : Nat ** (Vect n a, Vect n b -> t)) as this has the right quantifier
--- data BoringList : Type -> Type -> Type -> Type where
---   MkBoringList : (n : Nat) -> (Vect n a, Vect n b -> t) -> BoringList a b t
-
--- traverse' : {p : Type -> Type -> Type} -> (Cocartesian p, Monoidal p)
---   => p a b
---   -> p (BoringList a c t) (BoringList b c t)
--- traverse' k = ?test
-
--- fuse' : BoringList b b t -> t
--- fuse' (MkBoringList n (as, bs2t)) = ?this_isn't_possible
-
--- How do I define this?
--- makeTraversal' : (s -> BoringList a b t) -> Traversal a b s t
--- makeTraversal' h k = dimap h fuse' (traverse' k)
 
 -- Binary tree traversals
 
@@ -158,15 +151,6 @@ postorder' m (Node l x r) =
 
 postorder : {a, b : Type} -> Traversal a b (BTree a) (BTree b)
 postorder = makeTraversal (postorder' single)
-
--- TODO: left subtree prism for a binary tree
--- can we construct this from op?
--- leftSubtree : {a : Type} -> Prism a a (BTree a) (BTree a)
--- leftSubtree = prismFromPrim prim where
---   prim : PrimPrism (BTree a) (BTree a) (BTree a) (BTree a)
---   prim = MkPrimPrism match build where
---     match : BTree a -> Either (BTree a) (BTree a)
---     match Null = Left Null
 
 -- Lists
 
@@ -228,25 +212,24 @@ listTraverse = makeTraversal (listTraverse' single)
 -- -- foldr (\(Branch acc) x => Branch $ (::) <$> traverseRTree' g x <*> acc) (ret []) xs
 
 
--- Some tests
--- Aside: the fact that we can express unit tests on a type level means we get
--- *compiler errors when unit tests fail*. Isn't that beautiful?
+-- Some unit tests (if these fail we get type errors)
 
--- square : Num a => a -> a
--- square x = x * x
+square : Num a => a -> a
+square x = x * x
 
--- -- can use (op {p=(~>)} . π₁ {p=(~>)}) instead, Idris doesn't guess p very well
--- test1 : op_π₁ {p=(~>)} ProfunctorOptics.square (Just (3, True)) = Just (9, True)
--- test1 = Refl
+test1 : Maybe (Int, Bool)
+test1 = applyMor (op_π₁ {p=Morphism} (Mor ProfunctorOptics.square)) (Just (3, True))
 
--- test2 : inorder {p=(~>)} ProfunctorOptics.square (Node (Node Empty 3 Empty) 4 Empty) = Node (Node Empty 9 Empty) 16 Empty
--- test2 = Refl
+test2 : BTree Int
+test2 = applyMor (inorder {p=Morphism} (Mor ProfunctorOptics.square)) (Node (Node Null 3 Null) 4 Null)
 
--- test3 : listTraverse {p=(~>)} ProfunctorOptics.square [1,2,3,4] = [1,4,9,16]
--- test3 = Refl
+test3 : List Int
+test3 = applyMor (listTraverse {p=Morphism} (Mor ProfunctorOptics.square)) [1,2,3,4]
 
+testsPass :
+  ( ProfunctorOptics.test1 = Just (9, True)
+  -- , ProfunctorOptics.test2 = Node (Node Null 9 Null) 16 Null
+  -- , ProfunctorOptics.test3 = [1,4,9,16]
+  )
 
--- -- Ideas for more optics
-
--- -- index : Nat -> Prism on lists, gets/sets the nth item of a list if it exists
--- -- index' : Fin n -> Lens on Vect n a
+testsPass = (Refl) -- , Refl, Refl)
