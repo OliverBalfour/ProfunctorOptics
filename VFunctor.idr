@@ -30,15 +30,15 @@ interface VFunctor f => VApplicative (f : Type -> Type) where
   ret : a -> f a
   -- ap
   (<*>) : f (a -> b) -> (f a -> f b)
-  -- identity law, pure id <*> v = v
+  -- Identity law, pure id <*> v = v
   aid : (v : f a) -> ret (\x => x) <*> v = v
-  -- homomorphism law, pure g <*> pure x = pure (g x)
+  -- Homomorphism law, pure g <*> pure x = pure (g x)
   ahom : (g : a -> b) -> (x : a)
     -> ret g <*> ret x = ret (g x)
-  -- interchange law, u <*> pure y = pure ($ y) <*> u
+  -- Interchange law, u <*> pure y = pure ($ y) <*> u
   aint : (u : f (a -> b)) -> (y : a)
     -> u <*> ret y = ret ($ y) <*> u
-  -- composition law, ((pure (.) <*> u) <*> v) <*> w = u <*> (v <*> w)
+  -- Composition law, ((pure (.) <*> u) <*> v) <*> w = u <*> (v <*> w)
   acomp : (u : f (b -> c)) -> (v : f (a -> b)) -> (w : f a)
     -> ((ret (.) <*> u) <*> v) <*> w = u <*> (v <*> w)
 

@@ -8,19 +8,15 @@ import Morphism
 %hide Applicative
 
 -- Verified profunctors
-
 public export
 interface VProfunctor (p : Type -> Type -> Type) where
+  -- dimap maps two morphisms over a profunctor
+  -- p(a,-) is a covariant functor, p(-,a) is contravariant
   dimap : (a -> b) -> (c -> d) -> p b c -> p a d
-  dimap f g = lmap f . rmap g
 
-  lmap : (a -> b) -> p b c -> p a c
-  lmap = flip dimap (\x => x)
-
-  rmap : (a -> b) -> p c a -> p c b
-  rmap = dimap (\x => x)
-
+  -- Identity law, dimap id id = id
   pid : {a, b : Type} -> (x : p a b) -> dimap (\x => x) (\x => x) x = x
+  -- Composition law, dimap (f' . f) (g . g') = dimap f g . dimap f' g'
   pcomp
     : {a, b, c, d, e, t : Type}
     -> (x : p a b)
@@ -30,36 +26,19 @@ interface VProfunctor (p : Type -> Type -> Type) where
 
 -- Profunctors for product and sum types, and monoidal profunctors
 
-runit : (a, ()) -> a
-runit (x, ()) = x
-runit' : a -> (a, ())
-runit' x = (x, ())
-lunit : ((), a) -> a
-lunit ((), x) = x
-lunit' : a -> ((), a)
-lunit' x = ((), x)
-
-assoc : (a, (b, c)) -> ((a, b), c)
-assoc (x, (y, z)) = ((x, y), z)
-assoc' : ((a, b), c) -> (a, (b, c))
-assoc' ((x, y), z) = (x, (y, z))
-
+-- Cartesianly strong profunctors preserve product types
 public export
 interface VProfunctor p => Cartesian p where
   first  : p a b -> p (a, c) (b, c)
   second : p a b -> p (c, a) (c, b)
-  cfirstunit : (h : p a b)
-    -> dimap VProfunctor.runit VProfunctor.runit' h = first h
-  -- csecondunit : (h : p a b)
-  --   -> dimap VProfunctor.runit VProfunctor.runit' h = second h
-  -- cfirstassoc : (h : p a b)
-  --   -> dimap VProfunctor.assoc VProfunctor.assoc' (first (first h)) = first h
 
+-- Co-Cartesianly strong profunctors preserve sum types
 public export
 interface VProfunctor p => Cocartesian p where
   left  : p a b -> p (Either a c) (Either b c)
   right : p a b -> p (Either c a) (Either c b)
 
+-- Profunctors with monoid object structure
 public export
 interface VProfunctor p => Monoidal p where
   par   : p a b -> p c d -> p (a, c) (b, d)
@@ -67,22 +46,17 @@ interface VProfunctor p => Monoidal p where
 
 -- Profunctor implementations
 
+-- Hom(-,-) profunctor, the canonical profunctor
 public export
 implementation VProfunctor Morphism where
   dimap f g (Mor h) = Mor (g . h . f)
   pid (Mor f) = cong Mor (sym (ext f))
   pcomp (Mor x) f' f g g' = Refl
 
-unitIsUnit : (y : ()) -> y = ()
-unitIsUnit () = Refl
-
 public export
 implementation Cartesian Morphism where
   first (Mor f) = Mor (\(a, c) => (f a, c))
   second (Mor f) = Mor (\(c, a) => (c, f a))
-  cfirstunit (Mor f) = cong Mor (extensionality' (\(x, y) => rewrite unitIsUnit y in Refl))
-  -- csecondunit (Mor f) = cong Mor (extensionality' (\(x, y) => ?help))
-  -- cfirstassoc = ?help
 
 public export
 implementation Cocartesian Morphism where
@@ -98,12 +72,17 @@ implementation Monoidal Morphism where
   par (Mor f) (Mor g) = Mor (\(x, y) => (f x, g y))
   empty = Mor (const ())
 
+-- Hom profunctor in the Kleisli category
+-- This is the category of monadic types `m a` with Kleisli composition
+-- f . g = \x => join (f (g x)), where join : m (m a) -> m a
+-- We only require a functor for convenience
 public export
 implementation {k : Type -> Type} -> VFunctor k => VProfunctor (KleisliMorphism k) where
   dimap f g (Kleisli h) = Kleisli (fmap g . h . f)
   -- this proof reduces to `fmap (\x => x) . f = f` for `f : a -> k b`
-  -- we can't make `fid : fmap (\x => x) = id` because we need something
-  -- to pattern match on to prove it, so we use extensionality
+  -- we can't make `fid : fmap (\x => x) = id` intensional instead of extensional
+  -- because we need something to pattern match on to prove fid, so we must use
+  -- extensionality here
   pid (Kleisli f) = cong Kleisli (extensionality' (\x => fid (f x)))
   pcomp (Kleisli u) f' f g g' = cong Kleisli (extensionality' (\x =>
     fcomp (u (f' (f x))) g g'))

@@ -1,4 +1,4 @@
 
-# Profunctor Optics in Idris
+# Verified Profunctor Optics in Idris
 
-Work in progress implementation of lenses/prisms/etc in Idris.
+Small library of verified lenses, prisms, etc. using profunctors in Idris.
