@@ -7,8 +7,10 @@ import Data.Vect
 %default total
 %hide Applicative
 %hide (<*>)
+%hide (<$>)
 
 infixl 4 <*>
+infixl 4 <$>
 
 -- Verified functors
 -- Optics over functorial types can be verified in part using functor laws
@@ -22,6 +24,10 @@ interface VFunctor (f : Type -> Type) where
   -- fmap respects composition, F(g . h) = F(g) . F(h)
   fcomp : (x : f a) -> (g : b -> c) -> (h : a -> b)
     -> fmap (g . h) x = (fmap g . fmap h) x
+  -- Infix alias for fmap
+  (<$>) : (a -> b) -> (f a -> f b)
+  f <$> x = fmap f x
+  infixSame : (g : a -> b) -> (x : f a) -> fmap g x = g <$> x
 
 -- Verified applicative functors
 public export
@@ -52,6 +58,7 @@ implementation VFunctor List where
   fid (x::xs) = cong (x::) (fid xs)
   fcomp [] g h = Refl
   fcomp (x::xs) g h = cong (g (h x) ::) (fcomp xs g h)
+  infixSame f x = Refl
 
 -- forall xs. xs ++ [] = xs
 public export
@@ -163,6 +170,7 @@ implementation VFunctor Maybe where
   fid Nothing = Refl
   fcomp (Just x) g h = Refl
   fcomp Nothing g h = Refl
+  infixSame f x = Refl
 
 public export
 implementation VApplicative Maybe where
@@ -190,6 +198,7 @@ implementation {a:Type} -> VFunctor (Either a) where
   fid (Right x) = Refl
   fcomp (Left x) g h = Refl
   fcomp (Right x) g h = Refl
+  infixSame f x = Refl
 
 public export
 implementation {a:Type} -> VApplicative (Either a) where
@@ -217,6 +226,7 @@ implementation {a:Type} -> VFunctor (a,) where
   fmap f (x, y) = (x, f y)
   fid (x, y) = Refl
   fcomp (x, y) g h = Refl
+  infixSame f x = Refl
 
 -- Morphism a = Hom(a, -) is an applicative functor,
 -- the covariant Hom functor
@@ -227,6 +237,7 @@ implementation {a:Type} -> VFunctor (Morphism a) where
   fmap f (Mor g) = Mor (f . g)
   fid (Mor f) = cong Mor (sym (ext f))
   fcomp (Mor f) g h = Refl
+  infixSame f x = Refl
 
 public export
 implementation {a:Type} -> VApplicative (Morphism a) where
@@ -253,6 +264,7 @@ implementation {n:Nat} -> VFunctor (Vect n) where
   fid (x::xs) = cong (x::) (fid xs)
   fcomp [] g h = Refl
   fcomp (x::xs) g h = cong (g (h x) ::) (fcomp xs g h)
+  infixSame f x = Refl
 
 -- Binary trees are functors
 public export
@@ -279,6 +291,7 @@ implementation VFunctor BTree where
     in rewrite iH1
     in rewrite iH2
     in Refl
+  infixSame f x = Refl
 
 -- Rose trees are functors
 public export
@@ -312,3 +325,4 @@ implementation VFunctor RTree where
     prf [] g h = Refl
     prf (b::bs) g h = rewrite prf bs g h
       in cong (:: branches g (branches h bs)) (fcomp b g h)
+  infixSame f x = Refl

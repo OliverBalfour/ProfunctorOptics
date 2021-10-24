@@ -177,6 +177,8 @@ Rewriting can be convenient, however using a number of rewrites makes proofs dif
 
 As intuitionistic logics do not have the law of the excluded middle or double negation, proof by contradiction is not possible. Instead, ex falso quodlibet, the principle of explosion, must be used. In some cases a function has cases which are not possible but well-typed proofs must exist for those cases to satisfy the totality checker. In this case, rather than deriving a contradiction to show the state is not possible, the contradiction can be used with the function \texttt{void\ :\ Void\ ->\ a} to derive the proof goal.
 
+Idris has holes like Haskell, which are placeholder expressions denoted \texttt{?hole_name}. There is a \texttt{:t hole_name} command in the Idris REPL which prints out the typing context and goal, much like other theorem provers like Coq. This is immensely useful in developing proofs.
+
 \subsection{Limitations}
 
 Dependently typed theorem provers are intuitionistic in nature, which is strictly less powerful than classical logic. There exist theorems which can be proven with classical logic for which no constructive proof in Idris exists.

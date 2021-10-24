@@ -31,7 +31,7 @@ data PrimAdapter : Type -> Type -> Type -> Type -> Type where
     -> (to : b -> t)
     -> PrimAdapter a b s t
 
--- Basic optics
+-- Examples of simple optics
 
 -- Product left/right projection lens
 π₁ : PrimLens a b (a, c) (b, c)
@@ -61,7 +61,7 @@ op = MkPrimPrism match build where
   build : b -> Maybe b
   build = Just
 
--- Adapter for the isomorphism (A x B) x C \cong A x (B x C)
+-- Adapter for the isomorphism (A x B) x C = A x (B x C)
 prodAssoc : PrimAdapter ((a,b),c) ((a',b'),c') (a,(b,c)) (a',(b',c'))
 prodAssoc = MkPrimAdapter (\(x,(y,z)) => ((x,y),z)) (\((x,y),z) => (x,(y,z)))
 
@@ -92,5 +92,5 @@ implementation {a : Type} -> {b : Type} -> VProfunctor (PrimPrism a b) where
 
 public export
 implementation {a : Type} -> {b : Type} -> Cocartesian (PrimPrism a b) where
-  left (MkPrimPrism m b) = MkPrimPrism (either (bimap Left id . m) (Left . Right)) (Left . b)
-  right (MkPrimPrism m b) = MkPrimPrism (either (Left . Left) (bimap Right id . m)) (Right . b)
+  left (MkPrimPrism m b) = MkPrimPrism (either (bimapEither Left id . m) (Left . Right)) (Left . b)
+  right (MkPrimPrism m b) = MkPrimPrism (either (Left . Left) (bimapEither Right id . m)) (Right . b)

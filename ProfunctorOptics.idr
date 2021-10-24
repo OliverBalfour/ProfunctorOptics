@@ -1,11 +1,15 @@
 
 module ProfunctorOptics
 
-import Profunctor
+import VProfunctor
+import VFunctor
 import PrimitiveOptics
+import Morphism
 import Data.Vect
 
 %default total
+%hide Prelude.Interfaces.(<*>)
+%hide Prelude.Interfaces.(<$>)
 
 infixr 0 ~>
 
@@ -16,7 +20,7 @@ Optic : (Type -> Type -> Type) -> Type -> Type -> Type -> (Type -> Type)
 Optic p a b s t = p a b -> p s t
 
 Adapter : Type -> Type -> Type -> Type -> Type
-Adapter a b s t = {p : Type -> Type -> Type} -> Profunctor p => Optic p a b s t
+Adapter a b s t = {p : Type -> Type -> Type} -> VProfunctor p => Optic p a b s t
 
 Lens : Type -> Type -> Type -> Type -> Type
 Lens a b s t = {p : Type -> Type -> Type} -> Cartesian p => Optic p a b s t
@@ -88,7 +92,7 @@ implementation Functor (FunList a b) where
 implementation Applicative (FunList a b) where
   pure = Done
   Done f <*> l = map f l
-  More x l <*> l2 = assert_total More x (map flip l <*> l2)
+  More x l <*> l2 = assert_total More x (map flip l <**> l2)
 
 single : a -> FunList a b b
 single x = More x (Done id)
@@ -122,27 +126,21 @@ makeTraversal h k = dimap h fuse (traverse k)
 -- makeTraversal' : (s -> BoringList a b t) -> Traversal a b s t
 -- makeTraversal' h k = dimap h fuse' (traverse' k)
 
--- Binary trees
+-- Binary tree traversals
 
-data BTree : Type -> Type where
-  Empty : BTree a
-  Node : BTree a -> a -> BTree a -> BTree a
-
--- Tree traversals
-
-inorder' : {f : Type -> Type} -> Applicative f
+inorder' : {f : Type -> Type} -> VApplicative f
   => (a -> f b)
   -> BTree a -> f (BTree b)
-inorder' m Empty = pure Empty
+inorder' m Null = ret Null
 inorder' m (Node l x r) = Node <$> inorder' m l <*> m x <*> inorder' m r
 
 inorder : {a, b : Type} -> Traversal a b (BTree a) (BTree b)
 inorder = makeTraversal (inorder' single)
 
-preorder' : {f : Type -> Type} -> Applicative f
+preorder' : {f : Type -> Type} -> VApplicative f
   => (a -> f b)
   -> BTree a -> f (BTree b)
-preorder' m Empty = pure Empty
+preorder' m Null = ret Null
 preorder' m (Node l x r) =
   (\mid, left, right => Node left mid right) <$>
     m x <*> preorder' m l <*> preorder' m r
@@ -150,10 +148,10 @@ preorder' m (Node l x r) =
 preorder : {a, b : Type} -> Traversal a b (BTree a) (BTree b)
 preorder = makeTraversal (preorder' single)
 
-postorder' : {f : Type -> Type} -> Applicative f
+postorder' : {f : Type -> Type} -> VApplicative f
   => (a -> f b)
   -> BTree a -> f (BTree b)
-postorder' m Empty = pure Empty
+postorder' m Null = ret Null
 postorder' m (Node l x r) =
   (\left, right, mid => Node left mid right) <$>
     postorder' m l <*> postorder' m r <*> m x
@@ -168,14 +166,14 @@ postorder = makeTraversal (postorder' single)
 --   prim : PrimPrism (BTree a) (BTree a) (BTree a) (BTree a)
 --   prim = MkPrimPrism match build where
 --     match : BTree a -> Either (BTree a) (BTree a)
---     match Empty = Left Empty
+--     match Null = Left Null
 
 -- Lists
 
-listTraverse' : {f : Type -> Type} -> Applicative f
+listTraverse' : {f : Type -> Type} -> VApplicative f
   => (a -> f b)
   -> List a -> f (List b)
-listTraverse' g [] = pure []
+listTraverse' g [] = ret []
 listTraverse' g (x::xs) = (::) <$> g x <*> listTraverse' g xs
 
 listTraverse : {a, b : Type} -> Traversal a b (List a) (List b)
@@ -210,7 +208,7 @@ listTraverse = makeTraversal (listTraverse' single)
 --   foldr f a (Branch (x::xs)) = ?help
 
 -- implementation Traversable RTree where
---   -- traverse : Applicative f => (a -> f b) -> RTree a -> f (RTree b)
+--   -- traverse : VApplicative f => (a -> f b) -> RTree a -> f (RTree b)
 --   traverse g (Leaf x) = Leaf <$> g x
 --   traverse g (Branch []) = pure (Branch [])
 --   traverse g (Branch (x::xs)) =
@@ -218,37 +216,37 @@ listTraverse = makeTraversal (listTraverse' single)
 --         xs' = traverse g (Branch xs)
 --     in Branch <$> ?help2 -- (x' :: xs')
 
--- traverseRTree' : {f : Type -> Type} -> Applicative f
+-- traverseRTree' : {f : Type -> Type} -> VApplicative f
 --   => (a -> f b)
 --   -> RTree a -> f (RTree b)
 -- traverseRTree' g (Leaf x) = Leaf <$> g x
 -- traverseRTree' g (Branch branches) = foldr
 --   (\branch, acc => ?help (Branch [traverse g branch, acc]))
---   (pure (Branch []))
+--   (ret (Branch []))
 --   branches
 
--- -- foldr (\(Branch acc) x => Branch $ (::) <$> traverseRTree' g x <*> acc) (pure []) xs
+-- -- foldr (\(Branch acc) x => Branch $ (::) <$> traverseRTree' g x <*> acc) (ret []) xs
 
 
 -- Some tests
 -- Aside: the fact that we can express unit tests on a type level means we get
 -- *compiler errors when unit tests fail*. Isn't that beautiful?
 
-square : Num a => a -> a
-square x = x * x
+-- square : Num a => a -> a
+-- square x = x * x
 
--- can use (op {p=(~>)} . π₁ {p=(~>)}) instead, Idris doesn't guess p very well
-test1 : op_π₁ {p=(~>)} ProfunctorOptics.square (Just (3, True)) = Just (9, True)
-test1 = Refl
+-- -- can use (op {p=(~>)} . π₁ {p=(~>)}) instead, Idris doesn't guess p very well
+-- test1 : op_π₁ {p=(~>)} ProfunctorOptics.square (Just (3, True)) = Just (9, True)
+-- test1 = Refl
 
-test2 : inorder {p=(~>)} ProfunctorOptics.square (Node (Node Empty 3 Empty) 4 Empty) = Node (Node Empty 9 Empty) 16 Empty
-test2 = Refl
+-- test2 : inorder {p=(~>)} ProfunctorOptics.square (Node (Node Empty 3 Empty) 4 Empty) = Node (Node Empty 9 Empty) 16 Empty
+-- test2 = Refl
 
-test3 : listTraverse {p=(~>)} ProfunctorOptics.square [1,2,3,4] = [1,4,9,16]
-test3 = Refl
+-- test3 : listTraverse {p=(~>)} ProfunctorOptics.square [1,2,3,4] = [1,4,9,16]
+-- test3 = Refl
 
 
--- Ideas for more optics
+-- -- Ideas for more optics
 
--- index : Nat -> Prism on lists, gets/sets the nth item of a list if it exists
--- index' : Fin n -> Lens on Vect n a
+-- -- index : Nat -> Prism on lists, gets/sets the nth item of a list if it exists
+-- -- index' : Fin n -> Lens on Vect n a
