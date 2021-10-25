@@ -13,8 +13,7 @@ import Data.Vect
 
 infixr 0 ~>
 
-
--- Profunctor optics
+-- Profunctor optic types
 
 Optic : (Type -> Type -> Type) -> Type -> Type -> Type -> (Type -> Type)
 Optic p a b s t = p a b -> p s t
@@ -38,7 +37,7 @@ Traversal a b s t = {p : Type -> Type -> Type}
   -> (Cartesian p, Cocartesian p, Monoidal p)
   => Optic p a b s t
 
--- Product types (trivial)
+-- Product types
 
 -- π₁ : {p : Type -> Type -> Type} -> Cartesian p => p a b -> p (a, c) (b, c)
 π₁ : Lens a b (a, c) (b, c)
@@ -53,7 +52,7 @@ Traversal a b s t = {p : Type -> Type -> Type}
 op : Prism a b (Maybe a) (Maybe b)
 op = dimap (maybe (Left Nothing) Right) (either id Just) . right
 
--- Sum/coproduct types (trivial)
+-- Sum/coproduct types
 
 leftP : Prism a b (Either a c) (Either b c)
 leftP = left
@@ -73,6 +72,11 @@ prismFromPrim (MkPrimPrism m b) = dimap m (either id b) . right
 
 -- Complex data structures
 
+-- This type is from van Laarhoven
+-- https://twanvl.nl/blog/haskell/non-regular1
+-- FunList a b t is isomorphic to ∃n. a^n × (b^n -> t)
+-- which is equivalent to the type of a traversable (Pickering et. al. 2018)
+-- It allows us to write optics for lists and trees
 data FunList : Type -> Type -> Type -> Type where
   Done : t -> FunList a b t
   More : a -> FunList a b (b -> t) -> FunList a b t
@@ -163,73 +167,20 @@ listTraverse' g (x::xs) = (::) <$> g x <*> listTraverse' g xs
 listTraverse : {a, b : Type} -> Traversal a b (List a) (List b)
 listTraverse = makeTraversal (listTraverse' single)
 
--- -- This proof is commented out because it causes Idris to infinite loop
--- listTraverseGeneralisesMap : {a, b : Type}
---   -> (f' : a -> b)
---   -> (xs' : List a)
---   -> listTraverse {p=(~>)} f' xs' = map f' xs'
--- listTraverseGeneralisesMap f [] = Refl
--- listTraverseGeneralisesMap f (x::xs) =
---   let iH = listTraverseGeneralisesMap {a=a} {b=b} f xs
---   in rewrite iH in Refl
+-- Unit tests (if these fail we get type errors)
 
--- Rose trees
+test1 : applyMor (op_π₁ {p=Morphism} (Mor (\x => x * x))) (Just (3, True)) = Just (9, True)
+test1 = Refl
 
--- data RTree : Type -> Type where
---   Leaf : a -> RTree a
---   Branch : List (RTree a) -> RTree a
+-- `Forget r` profunctor optics operate as getters
+test2 : unForget (π₁ {p=Forget Int} (MkForget (\x => x))) (3, True) = 3
+test2 = Refl
 
--- implementation Functor RTree where
---   -- map : (a -> b) -> (RTree a -> RTree b)
---   map f (Leaf x) = Leaf (f x)
---   map f (Branch []) = Branch []
---   map f (Branch (x::xs)) = Branch (map f x :: map (map f) xs)
+-- General proof of how π₁ {p=Forget r} operates like fst
+forgetLeftProjection : {r,b : Type} -> (x : r) -> (y : b)
+  -> fst (x, y) = unForget (π₁ {p=Forget r} (MkForget (\z => z))) (x, y)
+forgetLeftProjection x y = Refl
 
--- implementation Foldable RTree where
---   -- foldr : (elem -> acc -> acc) -> acc -> RTree elem -> acc
---   foldr f a (Leaf x) = f x a
---   foldr f a (Branch []) = a
---   foldr f a (Branch (x::xs)) = ?help
-
--- implementation Traversable RTree where
---   -- traverse : VApplicative f => (a -> f b) -> RTree a -> f (RTree b)
---   traverse g (Leaf x) = Leaf <$> g x
---   traverse g (Branch []) = pure (Branch [])
---   traverse g (Branch (x::xs)) =
---     let x' = traverse g x
---         xs' = traverse g (Branch xs)
---     in Branch <$> ?help2 -- (x' :: xs')
-
--- traverseRTree' : {f : Type -> Type} -> VApplicative f
---   => (a -> f b)
---   -> RTree a -> f (RTree b)
--- traverseRTree' g (Leaf x) = Leaf <$> g x
--- traverseRTree' g (Branch branches) = foldr
---   (\branch, acc => ?help (Branch [traverse g branch, acc]))
---   (ret (Branch []))
---   branches
-
--- -- foldr (\(Branch acc) x => Branch $ (::) <$> traverseRTree' g x <*> acc) (ret []) xs
-
-
--- Some unit tests (if these fail we get type errors)
-
-square : Num a => a -> a
-square x = x * x
-
-test1 : Maybe (Int, Bool)
-test1 = applyMor (op_π₁ {p=Morphism} (Mor ProfunctorOptics.square)) (Just (3, True))
-
-test2 : BTree Int
-test2 = applyMor (inorder {p=Morphism} (Mor ProfunctorOptics.square)) (Node (Node Null 3 Null) 4 Null)
-
-test3 : List Int
-test3 = applyMor (listTraverse {p=Morphism} (Mor ProfunctorOptics.square)) [1,2,3,4]
-
-testsPass :
-  ( ProfunctorOptics.test1 = Just (9, True)
-  -- , ProfunctorOptics.test2 = Node (Node Null 9 Null) 16 Null
-  -- , ProfunctorOptics.test3 = [1,4,9,16]
-  )
-
-testsPass = (Refl) -- , Refl, Refl)
+-- Const profunctor optics recovers sum type constructors
+test3 : op {p=Const} (MkConst 3) = MkConst (Just 3)
+test3 = Refl

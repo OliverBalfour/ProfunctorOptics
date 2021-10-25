@@ -86,3 +86,47 @@ implementation {k : Type -> Type} -> VFunctor k => VProfunctor (KleisliMorphism 
   pid (Kleisli f) = cong Kleisli (extensionality (\x => fid (f x)))
   pcomp (Kleisli u) f' f g g' = cong Kleisli (extensionality (\x =>
     fcomp (u (f' (f x))) g g'))
+
+-- Const profunctor, Const r a is isomorphic to Hom((), a)
+-- This profunctor allows us to use our optics as constructors
+-- eg: op {p=Const} (MkConst 3) == MkConst (Just 3)
+public export
+data Const : Type -> Type -> Type where
+  MkConst : a -> Const r a
+
+public export
+implementation VProfunctor Const where
+  dimap f g (MkConst x) = MkConst (g x)
+  pid (MkConst x) = Refl
+  pcomp (MkConst x) f' f g g' = Refl
+
+public export
+implementation Cocartesian Const where
+  left (MkConst x) = MkConst (Left x)
+  right (MkConst x) = MkConst (Right x)
+
+public export
+implementation Monoidal Const where
+  par (MkConst x) (MkConst y) = MkConst (x, y)
+  empty = MkConst ()
+
+-- `Forget r` profunctor
+-- Allows us to use our profunctor optics as getters
+-- eg: unForget (π₁ {p=Forget Int} (MkForget (\x => x))) (3, True) == 3
+-- Inspired by PureScript's profunctor-lenses:
+-- https://github.com/purescript-contrib/purescript-profunctor-lenses/
+public export
+record Forget r a b where
+  constructor MkForget
+  unForget : a -> r
+
+public export
+implementation {r : Type} -> VProfunctor (Forget r) where
+  dimap f g (MkForget h) = MkForget (h . f)
+  pid (MkForget x) = Refl
+  pcomp (MkForget x) f' f g g' = Refl
+
+public export
+implementation {r : Type} -> Cartesian (Forget r) where
+  first (MkForget f) = MkForget (\(x, y) => f x)
+  second (MkForget f) = MkForget (\(x, y) => f y)
