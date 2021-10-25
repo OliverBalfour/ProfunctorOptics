@@ -41,6 +41,9 @@ Optics are a pure functional solution to the view-update problem (\cite{foster20
 
 In industrial functional programming the view-update problem is especially pernicious. Data structures representing components in real world systems frequently have dozens of fields and nested data structures with additional complexity. In a pure functional language, to create a new instance of a structure with only one field updated requires a great deal of boilerplate as below:
 
+TODO
+
+\iffalse
 \begin{minted}{idris}
 record Teacher where
   constructor MkTeacher
@@ -62,6 +65,7 @@ As data structures become more complex, writing simple getters and setters becom
 
 In imperative languages, objects are generally mutated in-place, circumventing this issue altogether. However, even in imperative languages there are often many benefits from using immutable objects. In JavaScript for example, there is an increasing trend towards pure functional state management for designing user interfaces, termed "declarative UI programming." ( TODO source ) Libraries such as Redux.js ( TODO cite) use an immutable state object with a group of actions that act on the state type whenever an event is triggered by a user interaction or network event. This presents numerous benefits such as simple control flow, undo/redo functionality and debugging. However, this requires a new state object to be created whenever an action acts on the existing one, an example of the view-update problem in an imperative setting. The conventional approach in JavaScript is to use Immer.js, which rather than using pure optics exploits esoteric language features to emulate mutability on immutable objects, however there is no fundamental reason optics would not work as well. TODO this isn't really the view-update problem is it? You need to define it with reference to literature. TODO cite https://github.com/immerjs/immer etc
 
+\fi
 
 \section{Background}
 
@@ -177,7 +181,7 @@ Rewriting can be convenient, however using a number of rewrites makes proofs dif
 
 As intuitionistic logics do not have the law of the excluded middle or double negation, proof by contradiction is not possible. Instead, ex falso quodlibet, the principle of explosion, must be used. In some cases a function has cases which are not possible but well-typed proofs must exist for those cases to satisfy the totality checker. In this case, rather than deriving a contradiction to show the state is not possible, the contradiction can be used with the function \texttt{void\ :\ Void\ ->\ a} to derive the proof goal.
 
-Idris has holes like Haskell, which are placeholder expressions denoted \texttt{?hole_name}. There is a \texttt{:t hole_name} command in the Idris REPL which prints out the typing context and goal, much like other theorem provers like Coq. This is immensely useful in developing proofs.
+Idris has holes like Haskell, which are placeholder expressions denoted \texttt{?hole\_name}. There is a \texttt{:t hole\_name} command in the Idris REPL which prints out the typing context and goal, much like other theorem provers like Coq. This is immensely useful in developing proofs.
 
 \subsection{Limitations}
 
