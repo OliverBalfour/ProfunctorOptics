@@ -1,10 +1,10 @@
 
 module ProfunctorOptics
 
-import VProfunctor
-import VFunctor
-import PrimitiveOptics
-import Morphism
+import Category.VProfunctor
+import Category.VFunctor
+import Category.Morphism
+import Primitive.PrimitiveOptics
 import Data.Vect
 
 %default total
@@ -156,7 +156,7 @@ postorder' m (Node l x r) =
 postorder : {a, b : Type} -> Traversal a b (BTree a) (BTree b)
 postorder = makeTraversal (postorder' single)
 
--- Lists
+-- List traversals
 
 listTraverse' : {f : Type -> Type} -> VApplicative f
   => (a -> f b)
@@ -166,6 +166,36 @@ listTraverse' g (x::xs) = (::) <$> g x <*> listTraverse' g xs
 
 listTraverse : {a, b : Type} -> Traversal a b (List a) (List b)
 listTraverse = makeTraversal (listTraverse' single)
+
+-- PrimPrism a b forms a Cocartesian profunctor
+-- This allows us to convert primitive optics to profunctor optics
+
+-- Definitions and lemmas from the Either bifunctor for `VProfunctor (PrimPrism a b)`
+bimapEither : (a -> c) -> (b -> d) -> Either a b -> Either c d
+bimapEither f g (Left x) = Left (f x)
+bimapEither f g (Right x) = Right (g x)
+
+bimapId : (z : Either a b) -> bimapEither (\x => x) (\x => x) z = z
+bimapId (Left y) = Refl
+bimapId (Right y) = Refl
+
+bimapLemma : (g :  e -> t) -> (g' : b -> e) -> (x' : Either b a)
+  -> bimapEither (g . g') (\x => x) x' = bimapEither g (\x => x) (bimapEither g' (\x => x) x')
+bimapLemma g g' (Left x) = Refl
+bimapLemma g g' (Right x) = Refl
+
+public export
+implementation {a : Type} -> {b : Type} -> VProfunctor (PrimPrism a b) where
+  dimap f g (MkPrimPrism m b) = MkPrimPrism (bimapEither g id . m . f) (g . b)
+  pid (MkPrimPrism m b) = cong (`MkPrimPrism` b) (
+    extensionality (\x => bimapId (m x)))
+  pcomp (MkPrimPrism m b) f' f g g' = cong (`MkPrimPrism` (\x => g (g' (b x))))
+    (extensionality (\x => bimapLemma g g' (m (f' (f x)))))
+
+public export
+implementation {a : Type} -> {b : Type} -> Cocartesian (PrimPrism a b) where
+  left (MkPrimPrism m b) = MkPrimPrism (either (bimapEither Left id . m) (Left . Right)) (Left . b)
+  right (MkPrimPrism m b) = MkPrimPrism (either (Left . Left) (bimapEither Right id . m)) (Right . b)
 
 -- Unit tests (if these fail we get type errors)
 

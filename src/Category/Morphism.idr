@@ -1,9 +1,9 @@
 
--- Derived from Data.Morphisms
-
-module Morphism
+module Category.Morphism
 
 %default total
+
+-- Derived from Data.Morphisms
 
 -- Morphisms in the category of Idris types
 -- This wrapper exists to help Idris unify types in some proofs

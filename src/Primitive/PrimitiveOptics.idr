@@ -1,8 +1,5 @@
 
-module PrimitiveOptics
-
-import VProfunctor
-import Morphism
+module Primitive.PrimitiveOptics
 
 %default total
 
@@ -64,33 +61,3 @@ op = MkPrimPrism match build where
 -- Adapter for the isomorphism (A x B) x C = A x (B x C)
 prodAssoc : PrimAdapter ((a,b),c) ((a',b'),c') (a,(b,c)) (a',(b',c'))
 prodAssoc = MkPrimAdapter (\(x,(y,z)) => ((x,y),z)) (\((x,y),z) => (x,(y,z)))
-
--- Primitive optics are special cases of profunctors
-
--- Definitions and lemmas from the Either bifunctor
-bimapEither : (a -> c) -> (b -> d) -> Either a b -> Either c d
-bimapEither f g (Left x) = Left (f x)
-bimapEither f g (Right x) = Right (g x)
-
-bimapId : (z : Either a b) -> bimapEither (\x => x) (\x => x) z = z
-bimapId (Left y) = Refl
-bimapId (Right y) = Refl
-
-bimapLemma : (g :  e -> t) -> (g' : b -> e) -> (x' : Either b a)
-  -> bimapEither (g . g') (\x => x) x' = bimapEither g (\x => x) (bimapEither g' (\x => x) x')
-bimapLemma g g' (Left x) = Refl
-bimapLemma g g' (Right x) = Refl
-
--- PrimPrism a b forms a Cocartesian profunctor
-public export
-implementation {a : Type} -> {b : Type} -> VProfunctor (PrimPrism a b) where
-  dimap f g (MkPrimPrism m b) = MkPrimPrism (bimapEither g id . m . f) (g . b)
-  pid (MkPrimPrism m b) = cong (`MkPrimPrism` b) (
-    extensionality (\x => bimapId (m x)))
-  pcomp (MkPrimPrism m b) f' f g g' = cong (`MkPrimPrism` (\x => g (g' (b x))))
-    (extensionality (\x => bimapLemma g g' (m (f' (f x)))))
-
-public export
-implementation {a : Type} -> {b : Type} -> Cocartesian (PrimPrism a b) where
-  left (MkPrimPrism m b) = MkPrimPrism (either (bimapEither Left id . m) (Left . Right)) (Left . b)
-  right (MkPrimPrism m b) = MkPrimPrism (either (Left . Left) (bimapEither Right id . m)) (Right . b)

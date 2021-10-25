@@ -1,8 +1,8 @@
 
-module VProfunctor
+module Category.VProfunctor
 
-import VFunctor
-import Morphism
+import Category.VFunctor
+import Category.Morphism
 
 %default total
 %hide Applicative

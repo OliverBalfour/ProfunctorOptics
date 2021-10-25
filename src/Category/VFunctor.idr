@@ -1,7 +1,7 @@
 
-module VFunctor
+module Category.VFunctor
 
-import Morphism
+import Category.Morphism
 import Data.Vect
 
 %default total
