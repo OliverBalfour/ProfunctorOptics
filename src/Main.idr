@@ -187,7 +187,7 @@ public export
 implementation {a : Type} -> {b : Type} -> VProfunctor (PrimPrism a b) where
   dimap f g (MkPrimPrism m b) = MkPrimPrism (bimapEither g id . m . f) (g . b)
   pid (MkPrimPrism m b) = cong (`MkPrimPrism` b)
-    ( extensionality (\x => bimapId (m x)))
+    (extensionality (\x => bimapId (m x)))
   pcomp (MkPrimPrism m b) f' f g g' = cong (`MkPrimPrism` (\x => g (g' (b x))))
     (extensionality (\x => bimapLemma g g' (m (f' (f x)))))
 
@@ -226,3 +226,8 @@ test3 = Refl
 forgetLeftProjection : (x : r) -> (y : b)
   -> fst (x, y) = view π₁ (x, y)
 forgetLeftProjection x y = Refl
+
+-- build op = Just (extensionally)
+constBuildsMaybe : (x : a)
+  -> Just x = build Main.op x
+constBuildsMaybe x = Refl
