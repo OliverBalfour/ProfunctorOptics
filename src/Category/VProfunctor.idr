@@ -91,8 +91,9 @@ implementation {k : Type -> Type} -> VFunctor k => VProfunctor (KleisliMorphism 
 -- This profunctor allows us to use our optics as constructors
 -- eg: op {p=Const} (MkConst 3) == MkConst (Just 3)
 public export
-data Const : Type -> Type -> Type where
-  MkConst : a -> Const r a
+record Const r a where
+  constructor MkConst  -- MkConst : a -> Const r a
+  unConst : a          -- unConst : Const r a -> a
 
 public export
 implementation VProfunctor Const where
@@ -117,8 +118,8 @@ implementation Monoidal Const where
 -- https://github.com/purescript-contrib/purescript-profunctor-lenses/
 public export
 record Forget r a b where
-  constructor MkForget
-  unForget : a -> r
+  constructor MkForget  -- MkForget : (a -> r) -> Forget r a b
+  unForget : a -> r     -- unForget : Forget r a b -> (a -> r)
 
 public export
 implementation {r : Type} -> VProfunctor (Forget r) where

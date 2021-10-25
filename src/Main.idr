@@ -1,5 +1,5 @@
 
-module ProfunctorOptics
+module Main
 
 import Category.VProfunctor
 import Category.VFunctor
@@ -37,7 +37,7 @@ Traversal a b s t = {p : Type -> Type -> Type}
   -> (Cartesian p, Cocartesian p, Monoidal p)
   => Optic p a b s t
 
--- Product types
+-- Product type optics
 
 -- π₁ : {p : Type -> Type -> Type} -> Cartesian p => p a b -> p (a, c) (b, c)
 π₁ : Lens a b (a, c) (b, c)
@@ -46,13 +46,13 @@ Traversal a b s t = {p : Type -> Type -> Type}
 π₂ : Lens a b (c, a) (c, b)
 π₂ = second
 
--- Optional types
+-- Optional type optics
 
 -- op : {p : Type -> Type -> Type} -> Cocartesian p => p a b -> p (Maybe a) (Maybe b)
 op : Prism a b (Maybe a) (Maybe b)
 op = dimap (maybe (Left Nothing) Right) (either id Just) . right
 
--- Sum/coproduct types
+-- Sum/coproduct type optics
 
 leftP : Prism a b (Either a c) (Either b c)
 leftP = left
@@ -60,7 +60,7 @@ leftP = left
 rightP : Prism a b (Either c a) (Either c b)
 rightP = right
 
--- Composition
+-- Example of composition of optics
 
 op_π₁ : LensPrism a b (Maybe (a, c)) (Maybe (b, c))
 op_π₁ = op . π₁
@@ -168,7 +168,6 @@ listTraverse : {a, b : Type} -> Traversal a b (List a) (List b)
 listTraverse = makeTraversal (listTraverse' single)
 
 -- PrimPrism a b forms a Cocartesian profunctor
--- This allows us to convert primitive optics to profunctor optics
 
 -- Definitions and lemmas from the Either bifunctor for `VProfunctor (PrimPrism a b)`
 bimapEither : (a -> c) -> (b -> d) -> Either a b -> Either c d
@@ -187,8 +186,8 @@ bimapLemma g g' (Right x) = Refl
 public export
 implementation {a : Type} -> {b : Type} -> VProfunctor (PrimPrism a b) where
   dimap f g (MkPrimPrism m b) = MkPrimPrism (bimapEither g id . m . f) (g . b)
-  pid (MkPrimPrism m b) = cong (`MkPrimPrism` b) (
-    extensionality (\x => bimapId (m x)))
+  pid (MkPrimPrism m b) = cong (`MkPrimPrism` b)
+    ( extensionality (\x => bimapId (m x)))
   pcomp (MkPrimPrism m b) f' f g g' = cong (`MkPrimPrism` (\x => g (g' (b x))))
     (extensionality (\x => bimapLemma g g' (m (f' (f x)))))
 
@@ -197,20 +196,33 @@ implementation {a : Type} -> {b : Type} -> Cocartesian (PrimPrism a b) where
   left (MkPrimPrism m b) = MkPrimPrism (either (bimapEither Left id . m) (Left . Right)) (Left . b)
   right (MkPrimPrism m b) = MkPrimPrism (either (Left . Left) (bimapEither Right id . m)) (Right . b)
 
--- Unit tests (if these fail we get type errors)
-
-test1 : applyMor (op_π₁ {p=Morphism} (Mor (\x => x * x))) (Just (3, True)) = Just (9, True)
-test1 = Refl
+-- Helpful combinators
 
 -- `Forget r` profunctor optics operate as getters
-test2 : unForget (π₁ {p=Forget Int} (MkForget (\x => x))) (3, True) = 3
-test2 = Refl
+view : {a : Type} -> Lens a b s t -> s -> a
+view optic x = unForget (optic {p=Forget a} (MkForget (\x => x))) x
 
--- General proof of how π₁ {p=Forget r} operates like fst
-forgetLeftProjection : {r,b : Type} -> (x : r) -> (y : b)
-  -> fst (x, y) = unForget (π₁ {p=Forget r} (MkForget (\z => z))) (x, y)
-forgetLeftProjection x y = Refl
+-- Morphism profunctor optics operate as setters
+update : Optic Morphism a b s t -> (a -> b) -> (s -> t)
+update optic f x = applyMor (optic (Mor f)) x
 
 -- Const profunctor optics recovers sum type constructors
-test3 : op {p=Const} (MkConst 3) = MkConst (Just 3)
+build : Prism a b s t -> b -> t
+build optic x = unConst (optic {p=Const} (MkConst x))
+
+-- Unit tests (if these fail we get type errors)
+-- These are provided as examples of how to use these profunctor optics in practice
+
+test1 : update (Main.op . π₁) (\x => x * x) (Just (3, True)) = Just (9, True)
+test1 = Refl
+
+test2 : view π₁ (3, True) = 3
+test2 = Refl
+
+test3 : build Main.op 3 = Just 3
 test3 = Refl
+
+-- view π₁ = fst (extensionally)
+forgetLeftProjection : (x : r) -> (y : b)
+  -> fst (x, y) = view π₁ (x, y)
+forgetLeftProjection x y = Refl
