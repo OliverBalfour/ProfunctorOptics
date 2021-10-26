@@ -18,6 +18,8 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{longtable}
+\usepackage{fontspec}
+\setmonofont{Source Code Pro}
 
 \title{Verified Profunctor Optics in Idris}
 \author{Oliver Balfour}
@@ -27,7 +29,7 @@
 \maketitle
 
 \begin{abstract}
-	Optics are a commonly used design pattern in industrial functional programming. They are convenient combinators for reading and updating fields in composite data structures. Common implementations such as Edward Kmett's Haskell \texttt{lens} library are highly complex. We discuss profunctor optics, a modern formulation of optics which is more flexible than the more common van Laarhoven formulation. This report discusses the implementation and formal verification of optics in Idris, a dependently typed functional programming language and theorem prover. TODO summarise results, discussion and conclusion
+Optics are a commonly used design pattern in industrial functional programming. They are convenient combinators for reading and updating fields in composite data structures. Common implementations such as Edward Kmett's Haskell \texttt{lens} library are highly complex. We discuss profunctor optics, a modern formulation of optics which is more flexible than the more common van Laarhoven formulation. This report discusses the implementation and formal verification of profunctor optics in Idris, a dependently typed functional programming language and theorem prover. TODO summarise results, discussion and conclusion
 \end{abstract}
 
 \tableofcontents
@@ -35,42 +37,28 @@
 
 \section{Introduction}
 
-> The Introduction should give us an overview of optics and what they're used for (without going into any detail), a brief overview of formal verification, and the general merits of formally verifying optics. It should then tell us briefly what will be discussed in each section and what we ultimately hope to achieve.
+The view-update problem is the problem of how to neatly read and write small components of large composite data structures (\cite{foster2005combinators}). In imperative languages, objects are generally mutated in-place, circumventing the view-update problem altogether. Pure functional programming languages however are not afforded mutable variables, making the issue pernicious in industrial programs with highly complex data structures.
 
-Optics are a pure functional solution to the view-update problem (\cite{foster2005combinators}), the problem of how to neatly read and write small components of large composite data structures.
+Optics are a pure functional solution to the view-update problem (\cite{foster2005combinators}). Data structures representing components in real world systems frequently have dozens of fields and nested data structures with additional complexity. In a pure functional language, updating a field in a composite data type such as \texttt{Maybe (a, Bool)} requires boilerplate functions for every such composite type as in the below Idris code:
 
-In industrial functional programming the view-update problem is especially pernicious. Data structures representing components in real world systems frequently have dozens of fields and nested data structures with additional complexity. In a pure functional language, to create a new instance of a structure with only one field updated requires a great deal of boilerplate as below:
-
-TODO
-
-\iffalse
 \begin{minted}{idris}
-record Teacher where
-  constructor MkTeacher
-  name : String
-
-record Student where
-  constructor MkPerson
-  name : String
-  age : Int
-  email : String
-  teacher : Teacher
-
-changeTeacherName : String -> Student -> Student
-changeTeacherName tname (MkStudent sname age email (MkTeacher _)) =
-  MkStudent sname age email (MkTeacher tname)
+updateComplexType : (a -> b) -> Maybe (a, Bool) -> Maybe (b, Bool)
+updateComplexType f (Just (x, y)) = Just (f x, y)
+updateComplexType f Nothing = Nothing
 \end{minted}
 
-As data structures become more complex, writing simple getters and setters becomes extremely tedious. TODO write optics for the above types, noting they probably aren't any better than what you've written
+As data structures become more complex, writing getters and setters becomes a tedious and bug-prone task. Optics are objects which represent a view into a data type which can be composed to create views into composite types, and used to view or update fields. Using the profunctor optics library discussed in this report, the above \texttt{updateComplexType} function may be defined as \texttt{updateComplexType = update (op . π₁)} where \texttt{op} is an optic for optional (\texttt{Maybe a}) types and \texttt{π₁} is a left projection optic for product types.
 
-In imperative languages, objects are generally mutated in-place, circumventing this issue altogether. However, even in imperative languages there are often many benefits from using immutable objects. In JavaScript for example, there is an increasing trend towards pure functional state management for designing user interfaces, termed "declarative UI programming." ( TODO source ) Libraries such as Redux.js ( TODO cite) use an immutable state object with a group of actions that act on the state type whenever an event is triggered by a user interaction or network event. This presents numerous benefits such as simple control flow, undo/redo functionality and debugging. However, this requires a new state object to be created whenever an action acts on the existing one, an example of the view-update problem in an imperative setting. The conventional approach in JavaScript is to use Immer.js, which rather than using pure optics exploits esoteric language features to emulate mutability on immutable objects, however there is no fundamental reason optics would not work as well. TODO this isn't really the view-update problem is it? You need to define it with reference to literature. TODO cite https://github.com/immerjs/immer etc
+However, even in imperative languages there are often many benefits from using immutable objects. In JavaScript for example, there is an increasing trend towards pure functional state management for designing user interfaces, termed \textit{declarative UI} (\cite{declarativeUI}). Libraries such as Redux.js (\cite{reduxjs}) use an immutable state object with a group of actions that act on the state type whenever an event is triggered by user interactions. This presents numerous benefits such as simple control flow and undo/redo functionality. However, this requires a new state object after each event with perhaps a single field changed. The conventional approach in JavaScript is to use Immer.js (\cite{immerjs}), which rather than using pure optics exploits esoteric language features to emulate mutability on immutable objects. However, there is no fundamental reason why optics would not work equally well.
 
-\fi
+Profunctor optics are a very flexible and powerful encoding of optics, however they are highly complex, demonstrating a need for quality assurance.
 
+In statically typed languages, types correspond with certain logical propositions and programs serve as proofs of those propositions (\cite{wadler2015propositions}). This insight is known as the Curry-Howard correspondence (\cite{sorensen2006curryhoward}) and it underpins theorem provers and formal verification. Dependent types are a feature of some type systems which allows types to depend on values. Dependent types allow programmers to encode first order logical propositions and equalities between expressions into the type system and prove many useful theorems and properties of their programs.
+
+Idris is a dependently-typed functional programming language similar to Haskell which may be used as a theorem prover. This report discusses using Idris to both implement and formally verify a profunctor optics library. Dependent types are used to express and prove that the profunctor optics adhere to all relevant mathematical laws and desirable properties.
+
+\newpage
 \section{Background}
-
-> The background should be written as if the audience was also a computer science student, but not necessarily familiar with these areas. This means most of the work you have in the introduction should really belong in the background. You should introduce (and provide motivating examples of) Functors, Profunctors, Lenses, Optics, Dependent Types, Propositions as Types; Proofs as Programs, and finally -  Idris as a functional programming language (like Haskell) and as a theorem prover. You also need supporting references for all concepts discussed here.
-
 
 \subsection{Idris}
 
@@ -107,25 +95,25 @@ The equality type is especially useful in conjunction with. If $a=b$ and a const
 A  is tabulated below.  $\Sigma$ types are encoded using a construct called dependent pairs, which is not discussed in this report. $\Pi$ types are encoded with function types where the return type depends on the argument.
 
 \begin{longtable}[]{@{}lll@{}}
-	\toprule
-	Logic & Type Theory & Idris
-	Type \\
-	\midrule
-	\endhead
-	{\(T\)} & {\(\top\)} & \texttt{()} \\
-	{\(F\)} & {\(\bot\)} & \texttt{Void} \\
-	{\(a \land b\)} & {\(a \times b\)} & \texttt{(a,\ b)} \\
-	{\(a \vee b\)} & {\(a + b\)} & \texttt{Either\ a\ b} \\
-	{\(a\Rightarrow b\)} & {\(a \rightarrow b\)} &
-	\texttt{a\ -\textgreater{}\ b} \\
-	{\(\forall x.Px\)} & {\(\Pi x.Px\)} &
-	\texttt{(x:a)\ -\textgreater{}\ P\ x} \\
-	{\(\exists x.Px\)} & {\(\Sigma x.Px\)} & \texttt{(x:a\ **\ P\ x)} \\
-	{\(\neg p\)} & {\(p \rightarrow \bot\)} &
-	\texttt{p\ -\textgreater{}\ Void} \\
-	{$a=b$} & {$a=b$} & {\texttt{a = b}} \\
-	\bottomrule
-	\caption{Corresponding connectives and quantifiers. Note that the predicates in Idris are of the form \texttt{P\ :\ (x\ :\ a)\ -\textgreater{}\ Type} where \texttt{P\ x\ =\ ()} or \texttt{P\ x\ =\ Void}.}
+\toprule
+Logic & Type Theory & Idris
+Type \\
+\midrule
+\endhead
+{\(T\)} & {\(\top\)} & \texttt{()} \\
+{\(F\)} & {\(\bot\)} & \texttt{Void} \\
+{\(a \land b\)} & {\(a \times b\)} & \texttt{(a,\ b)} \\
+{\(a \vee b\)} & {\(a + b\)} & \texttt{Either\ a\ b} \\
+{\(a\Rightarrow b\)} & {\(a \rightarrow b\)} &
+\texttt{a\ -\textgreater{}\ b} \\
+{\(\forall x.Px\)} & {\(\Pi x.Px\)} &
+\texttt{(x:a)\ -\textgreater{}\ P\ x} \\
+{\(\exists x.Px\)} & {\(\Sigma x.Px\)} & \texttt{(x:a\ **\ P\ x)} \\
+{\(\neg p\)} & {\(p \rightarrow \bot\)} &
+\texttt{p\ -\textgreater{}\ Void} \\
+{$a=b$} & {$a=b$} & {\texttt{a = b}} \\
+\bottomrule
+\caption{Corresponding connectives and quantifiers. Note that the predicates in Idris are of the form \texttt{P\ :\ (x\ :\ a)\ -\textgreater{}\ Type} where \texttt{P\ x\ =\ ()} or \texttt{P\ x\ =\ Void}.}
 \end{longtable}
 
 \subsection{Proof Techniques}
@@ -135,15 +123,15 @@ Idris will reduce values in types to their normal form by applying function defi
 This allows us to write simple proofs as below, which are analogous to unit tests.
 
 \begin{minted}{idris}
-	fact : Nat -> Nat
-	fact Z = 1
-	fact (S n) = (S n) * fact n
-	
-	factTheorem : fact 5 = 120
-	factTheorem = Refl
-	
-	factTheorem2 : (S n) * fact n = fact (S n)
-	factTheorem2 = Refl
+fact : Nat -> Nat
+fact Z = 1
+fact (S n) = (S n) * fact n
+
+factTheorem : fact 5 = 120
+factTheorem = Refl
+
+factTheorem2 : (S n) * fact n = fact (S n)
+factTheorem2 = Refl
 \end{minted}
 
 The main proof techniques in Idris are structural induction, rewriting types and ex falso quodlibet.
@@ -153,15 +141,15 @@ Structural induction is the most common tool. This entails case splitting a theo
 For example,
 
 \begin{minted}{idris}
-	-- forall n : Nat. n + 0 = n
-	natPlusZeroId : (n : Nat) -> n + 0 = n
-	natPlusZeroId Z = Refl
-	natPlusZeroId (S n) = cong S (natPlusZeroId n)
-	
-	-- forall xs : List a. xs ++ [] = xs
-	listConcatRightNilId : (xs : List a) -> xs ++ [] = xs
-	listConcatRightNilId [] = Refl
-	listConcatRightNilId (x::xs) = cong (x::) (listConcatRightNilId xs)
+-- ∀ n : Nat. n + 0 = n
+natPlusZeroId : (n : Nat) -> n + 0 = n
+natPlusZeroId Z = Refl
+natPlusZeroId (S n) = cong S (natPlusZeroId n)
+
+-- ∀ xs : List a. xs ++ [] = xs
+listConcatRightNilId : (xs : List a) -> xs ++ [] = xs
+listConcatRightNilId [] = Refl
+listConcatRightNilId (x::xs) = cong (x::) (listConcatRightNilId xs)
 \end{minted}
 
 These proofs invoke a lemma in the Idris Prelude, \texttt{cong :\ (f:t->u) -> (a = b) -> (f a = f b)}, which is analogous to the rule $\forall f.~a=b\!\!\implies\!\! f(a)=f(b)$ in mathematics.
@@ -169,12 +157,12 @@ These proofs invoke a lemma in the Idris Prelude, \texttt{cong :\ (f:t->u) -> (a
 Idris also provides a facility for rewriting the goal type using an equality. For example:
 
 \begin{minted}{idris}
-	trans' : a = b -> b = c -> a = c
-	trans' p1 p2 =
-	  -- goal: a = c
-	  rewrite p1 in  -- replace `a` with `b` in `a = c`
-	    -- new goal: b = c
-	    p2
+trans' : a = b -> b = c -> a = c
+trans' p1 p2 =
+  -- goal: a = c
+  rewrite p1 in  -- replace `a` with `b` in `a = c`
+    -- new goal: b = c
+    p2
 \end{minted}
 
 Rewriting can be convenient, however using a number of rewrites makes proofs difficult to follow. Prelude functions such as \texttt{trans}, \texttt{sym}, \texttt{cong} and \texttt{replace} can accomplish the same tasks with a more conventional proof structure.
@@ -193,34 +181,35 @@ Additionally, there is a distinction between intensional and extensional equalit
 
 These limitations mean that many theorems of interest either cannot be proven or are much more difficult to prove in Idris. TODO examples
 
-\subsection{Optics}
-
-Optics are data accessors that ease reading and writing into composite data structures. Industrial programs tend to have very complex and deeply nested data structures, which makes tasks like copying and updating a single field in a deeply nested data structure in a functional style very cumbersome. Optics are an elegant solution to this problem. They are objects which represent a view into a field of a data structure which can be composed for nested structures and used to view and update the field they model.
-
-There are two common encodings of optics, van Laarhoven optics and profunctor optics. Most established implementations use the older van Laarhoven design, however these have many limitations. One of the principal benefits of optics is that they compose elegantly, however the van Laarhoven encoding makes a distinction between lenses (optics for product types) and prisms (optics for sum types) and does not allow composition of lenses and optics, so you cannot express an optic that reads and writes the integer in a \texttt{Maybe (Integer, String)}.
-
-However, profunctor optics generalise optics to work around these issues. As with many other functional programming design patterns, they are inspired by category theory, specifically the notion of a profunctor. Profunctor optics are generic over the typeclass of profunctors, so they allow choice of profunctor in which to use an optic. This allows programmers to not just use optics to view and update, but to also accumulate side effects in the process.
-
-A major concern is that optics are very complicated. Formal verification of profunctor optics is thus a natural application of dependent types.
-
-TODO
-what are common/useful optics with examples?
-can we verify optics?
-what are lenses vs prisms vs traversals vs adapters?
-
 \subsection{Functors}
 
-Before discussing profunctors, we discuss categories and functors. A category is a mathematical object which consists of a collection of objects and between any two objects a collection of arrows or morphisms (\cite{mac1970categories}). We will only discuss locally small categories so we may assume these collections of morphisms are sets, called Hom-sets. The only properties categories must have is an associative composition operation on morphisms and an identity morphism on each object. Categories are a useful abstraction as they generalise objects and structure preserving maps between them from many different fields. There is a category of sets where objects are sets and Hom-sets contain functions, $\operatorname{Hom}(A,B)=\{ f : A\to B\text{ is a function} \}$. Morphism composition is function composition, and there exists an identity function on each set. In group theory, there is a category of groups where objects are groups and morphisms are group homomorphisms. Many other examples exist, such as partially ordered sets form categories where objects are elements and exactly one morphism exists between every ordered pair.
+Before discussing profunctors, we discuss categories, functors, applicative functors and monads. A category is a mathematical object which consists of a collection of objects and between any two objects a collection of arrows or morphisms (\cite{mac1970categories}). We will only discuss locally small categories so we may assume these collections of morphisms are sets, called Hom-sets. The only properties categories must have is an associative composition operation on morphisms and an identity morphism on each object. Categories are a useful abstraction as they generalise objects and structure preserving maps between them from many different fields. There is a category of sets where objects are sets and Hom-sets contain functions, $\operatorname{Hom}(A,B)=\{ f : A\to B\text{ is a function} \}$. Morphism composition is function composition, and there exists an identity function on each set. In group theory, there is a category of groups where objects are groups and morphisms are group homomorphisms. Many other examples exist, for example partially ordered sets form categories where objects are elements and exactly one morphism exists between every ordered pair.
 
 Notably, types and total functions in Idris form a category similar to the category of sets. For convenience, these categories are assumed the same.
 
-Functors are structure preserving maps between categories (and thus morphisms in the category of categories). They consist of two components mapping objects and morphisms from the domain category to objects and morphisms in the codomain category. Functors respect identities $F(\text{id}_X)=\text{id}_{F(X)}$ and composition $F(f\circ g)=F(f)\circ F(g)$
+Functors are structure preserving maps between categories (and thus morphisms in the category of categories). They consist of two components mapping objects and morphisms from the domain category to objects and morphisms in the codomain category. Functors respect identities $F(\text{id}_X)=\text{id}_{F(X)}$ and composition $F(f\circ g)=F(f)\circ F(g)$ An endofunctor is a functor which maps into the same category.
 
-An endofunctor is a functor which maps into the same category.
+In Idris, generic containers such as lists and trees are endofunctors. The type constructor \texttt{List : Type -> Type} is the component of the functor mapping objects, and the \texttt{map : (a -> b) -> (List a -> List b)} function is the component mapping morphisms. Additionally, the partially applied arrow type \texttt{a->} is a functor, the covariant Hom functor (and partially applied Hom profunctor).
 
-It is worth mentioning applicative functors and monads briefly
+Monads are a subset of endofunctors equipped with two maps \texttt{η : a -> m a} and \texttt{μ : m (m a) -> m a} named pure/return and join respectively, where \texttt{m} is the monad. In functional programming, they can be used to encapsulate and compose side effecting functions in a type safe way (\cite{moggi1991notions}). The \texttt{IO} type constructor is a monad representing side effects which allows side effects to be composed and enforce that functions emitting side effects have a return type containing \texttt{IO}. Lists form a monad where \texttt{pure x = [x]} and \texttt{join = concat} and function composition results in a list of all possible applications of functions to arguments.
 
-In Idris, generic containers such as lists and trees are endofunctors. The type constructor `List : Type -> Type` is the component of the functor mapping objects, and the `map : (a -> b) -> (List a -> List b)` function is the component mapping morphisms. Additionally, the partially applied arrow type `a->` is a functor (which we will see is a partially applied Hom profunctor).
+Monads satisfy the following laws:
+\begin{enumerate}
+	\item \texttt{∀ f,x. (return `join` f) x = f x} (left identity law, tildes denote infix function calls)
+	\item \texttt{∀ f,x. (f `join` return) x = f x} (right identity law)
+	\item \texttt{∀ f,g,h,x. f `join` (g `join` h) \$ x = (f `join` g) `join` h \$ x} (associativity)
+\end{enumerate}
+
+Monads naturally give rise to a category known as a Kleisli category (\cite{mac1970categories} p.147). In this category, the objects are the same as the category of types, and the morphisms are each of the form \texttt{a -> m b} so $\operatorname{Hom}(\texttt{a},\texttt{b})=\{ f : \texttt{a -> m b} \}$. Morphism composition utilises the join operation, so $f\circ_m g = \mu\circ f\circ g$.
+
+Applicative functors are a subset of endofunctors introduced by \cite{mcbride2008applicative} as a useful abstraction in functional programming intermediate between endofunctors and monads. They are endofunctors equipped with maps \texttt{pure : a -> f a} and \texttt{ap : f (a -> b) -> (f a -> f b)} (written \texttt{<*>} as an infix operator) for every applicative \texttt{f} satisfying the following properties
+
+\begin{enumerate}
+	\item \texttt{∀ v. pure id <*> v = v} (identity law)
+	\item \texttt{∀ g,x. pure g <*> pure x = pure (g x)} (homomorphism law)
+	\item \texttt{∀ u,y. u <*> pure y = pure (\textbackslash{}x => x y) <*> y} (interchange law)
+	\item \texttt{∀ u,v,w. ((pure (.) <*> u) <*> v) <*> w = u <*> (v <*> w)} (composition law)
+\end{enumerate}
 
 \subsection{Profunctors}
 
@@ -244,14 +233,64 @@ Dictionary / hash map is a profunctor (https://bartoszmilewski.com/2017/03/29/en
 
 VProfunctor = verified not v-enriched
 
+\subsection{Optics}
+
+Optics are data accessors that ease reading and writing into composite data structures. Industrial programs tend to have very complex and deeply nested data structures, which makes tasks like copying and updating a single field in a deeply nested data structure in a functional style very cumbersome. Optics are an elegant solution to this problem. They are objects which represent a view into a field of a data structure which can be composed for nested structures and used to view and update the field they model.
+
+There are many encodings of optics. This report discusses simple algebraic data type optics, van Laarhoven optics (\cite{laarhoven2011lens}) and profunctor optics (\cite{pickering2017profunctor}). Most established implementations such as the \texttt{lens} library in Haskell (\cite{ekmettlens}) use the van Laarhoven design, however these have many limitations. One of the principal benefits of optics is that they compose elegantly, however the van Laarhoven encoding makes a distinction between lenses (optics for product types) and prisms (optics for sum types) and does not allow composition of lenses and optics, so you cannot express an optic for the integer in a \texttt{Maybe (Integer, String)} type (\cite{pickering2017profunctor}).
+
+However, profunctor optics generalise optics to work around these issues. As with many other functional programming design patterns, they are inspired by category theory, specifically the notion of a profunctor. Profunctor optics are generic over the typeclass of profunctors, so they allow choice of profunctor in which to use an optic. This allows programmers to not just use optics to view and update, but to also accumulate side effects and recover constructors for sum types in the process.
+
+A major concern is that optics are very complicated. Formal verification of profunctor optics is thus a natural application of dependent types.
+
+The simplest encoding of optics is to create typeclasses (interfaces in Idris) for lenses, prisms, traversals and adapters. Lenses are optics for product types that allow viewing and updating fields. Prisms are optics for sum types that allow pattern matching if a field is present and constructing a sum type from one of the components. Adapters and traversals are optics for isomorphic types and container types respectively and are not discussed in this report.
+
+In the below encoding, \texttt{PrimitiveLens a b (a,c) (b,c)} means a view into the \texttt{a} in \texttt{(a,c)}. The other two type variables add a degree of freedom when updating tuples to change the type of the left element of the tuple.
+
+\begin{minted}{idris}
+record PrimitiveLens a b s t where
+  constructor MkPrimLens
+  view : s -> a
+  update : (b, s) -> t
+
+record PrimitivePrism a b s t where
+  constructor MkPrimLens
+  match : s -> Either t a
+  build : b -> t
+
+-- Left projection lens
+_1 : PrimitiveLens a b (a,c) (b,c)
+_1 = MkPrimLens fst update where
+  update : (b, (a, c)) -> (b, c)
+  update (x', (x, y)) = (x', y)
+\end{minted}
+
+Then \texttt{view \_1 (2, True) == 2}. However, there is no clear way to compose two lenses or two prisms using this encoding, and it is not possible to compose a lens and a prism using these two typeclasses.
+
+A more powerful encoding is the van Laarhoven functor transformer lenses (\cite{laarhoven2011lens}). These are parameterised over the functor typeclass, where different functors applied to the optics change how they behave. In Haskell,
+
+\begin{minted}{haskell}
+type LaarhovenLens a b = forall f. Functor f => (b -> f b) -> (a -> f a)
+\end{minted}
+
+Under this encoding, the above product projection lens would have type \texttt{LaarhovenLens (a,b) a}. It can be modified to have the additional degree of freedom in the simpler encoding.
+
+The \texttt{Const a} functor \texttt{newtype Const a b = \{ unConst :: a \}} stores a value of type \texttt{a}. Applied to the above definition, it produces a getter \texttt{view optic structure = optic (\textbackslash{}x -> Const x) structure}. Likewise, the identity functor \texttt{newtype Id a = \{ unId :: a \}} produces an update function \texttt{update optic field structure = optic (\textbackslash{}x -> Id field) structure}.
+
+These optics are simple functions and so support composition, however lenses and prisms are still mutually exclusive and cannot be composed. This leaves profunctor optics, which generalise van Laarhoven's functor transformer lenses and are flexible enough to support composition.
+
 \subsection{Profunctor Optics}
 
 what are profunctor optics?
 why are they good?
 what are common/useful optics with examples?
 optics on type indexed data types???
-other languages: immer.js, directly writing to relevant fields
-correspondence with van Laarhoven \cite{boisseau2018yoneda}
+correspondence with van Laarhoven \cite{boisseau2018yoneda} - this means even though they're harder to write you can map primitive ones to complex ones
+
+\section{Formally Verified Profunctor Optics}
+
+> We can then have a penultimate section discussing a framework for formal verification of profunctor optics in Idris and discussing the structure and details of your solution (minimal use of source code here). Concretely, this section should properly motivate the formal verification of profunctor optics and then progress through your solution. Talk concepts and give formal examples but avoid using source code (you can refer to sections in the appendix where necessary though).
+
 
 \section{Related Work}
 
@@ -268,39 +307,45 @@ https://dl.acm.org/doi/pdf/10.1145/1040305.1040325
 
 Existing research on profunctor optics
 
-Much existing work is focused on the correspondence between the van Larrhoven and profunctor representations of lenses, prisms, adapters and traversals. \cite{boisseau2018yoneda} provides an elegant proof of the correspondence with the Yoneda lemma, and previous work including \cite{pickering2017profunctor} and \cite{milewski2017profunctor} provide similar proofs invoking more complex machinery such as Tambara modules and tensor products.
+Much existing work is focused on the correspondence between the van Larrhoven and profunctor representations of lenses, prisms, adapters and traversals. \cite{boisseau2018yoneda} provides a proof of the correspondence with the Yoneda lemma, and previous work including \cite{pickering2017profunctor} and \cite{milewski2017profunctor} provide proofs invoking more complex machinery such as Tambara modules and tensor products.
 
-No prior work is known to have been done on formally verified profunctor optics
+No prior work is known to have been done on formally verified profunctor optics.
 
-Profunctor optics for dependent/indexed types would be lit, eg for type indexed syntax trees (using the Idris type system to make sure your compiler compiles only well typed programs)
+Future research on profunctor optics for dependent types such as type indexed syntax trees could be very useful. This would enable programming languages written in Idris to use dependent types to verify all syntax trees are well typed and use optics to elegantly traverse, view and update subtrees.
 
-\section{todo}
+\section{Conclusion}
 
-We can then have a penultimate section discussing a framework for formal verification of profunctor optics in Idris and discussing the structure and details of your solution (minimal use of source code here). Concretely, this section should properly motivate the formal verification of profunctor optics and then progress through your solution. Talk concepts and give formal examples but avoid using source code (you can refer to sections in the appendix where necessary though).
+> Finally in the conclusion you can discuss what you've accomplished, what improvements could be made, and other related work in the field (i.e where the current boundaries of formally verified profunctor optics are if any - and general boundaries of profunctor optics research).
 
-Finally in the conclusion you can discuss what you've accomplished, what improvements could be made, and other related work in the field (i.e where the current boundaries of formally verified profunctor optics are if any - and general boundaries of profunctor optics research).
-
-For our appendix, we should give the source code - your framework section is welcome to refer to lines or sections here, but should avoid putting the code in directly.
-
-In general you need to go into more detail in the background. What are van Larrhoven optics formally? What problem do they solve, what precisely are their limitations?
 
 \printbibliography
 
+\newpage
+\section{Appendix: Source Code}
+
+Mirrored at \href{https://github.com/OliverBalfour/ProfunctorOptics}{https://github.com/OliverBalfour/ProfunctorOptics}
+
+\subsection{Simple Optics: PrimitiveOptics.idr}
+
+\inputminted[breaklines,linenos]{idris}{../src/Primitive/PrimitiveOptics.idr}
+
+\subsection{Morphisms: Morphism.idr}
+
+\inputminted[breaklines,linenos]{idris}{../src/Category/Morphism.idr}
+
+\subsection{Verified Functors and Applicatives: VFunctor.idr}
+
+\inputminted[breaklines,linenos]{idris}{../src/Category/VFunctor.idr}
+
+\subsection{Verified Profunctors: VProfunctor.idr}
+
+\inputminted[breaklines,linenos]{idris}{../src/Category/VProfunctor.idr}
+
+\subsection{Profunctor Optics: Main.idr}
+
+\inputminted[breaklines,linenos]{idris}{../src/Main.idr}
+
 \end{document}          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

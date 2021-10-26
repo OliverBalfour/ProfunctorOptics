@@ -1,8 +1,0 @@
-\begin{Verbatim}[commandchars=\\\{\}]
-	\PYG{n+nf}{trans\PYGZsq{}} \PYG{o+ow}{:} a \PYG{o+ow}{=} b \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} b \PYG{o+ow}{=} c \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} a \PYG{o+ow}{=} c
-	trans\PYGZsq{} p1 p2 \PYG{o+ow}{=}
-	  \PYG{c+c1}{\PYGZhy{}\PYGZhy{} goal: a = c}
-	  \PYG{k+kr}{rewrite} p1 \PYG{k+kr}{in}  \PYG{c+c1}{\PYGZhy{}\PYGZhy{} replace `a` with `b` in `a = c`}
-	    \PYG{c+c1}{\PYGZhy{}\PYGZhy{} new goal: b = c}
-	    p2
-\end{Verbatim}

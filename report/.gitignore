@@ -1,3 +1,9 @@
+*.bbl
+*.blg
+*.out
+*.run.xml
+*.toc
+_minted-report/*.pygtex
 *.gz
 *.log
 *.aux
