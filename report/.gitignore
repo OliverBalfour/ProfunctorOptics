@@ -3,7 +3,9 @@
 *.out
 *.run.xml
 *.toc
-_minted-report/*.pygtex
+_minted-report
 *.gz
 *.log
 *.aux
+report-blx.bib
+*.bcf
