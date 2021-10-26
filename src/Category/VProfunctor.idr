@@ -87,6 +87,11 @@ implementation {k : Type -> Type} -> VFunctor k => VProfunctor (KleisliMorphism 
   pcomp (Kleisli u) f' f g g' = cong Kleisli (extensionality (\x =>
     fcomp (u (f' (f x))) g g'))
 
+public export
+implementation {k : Type -> Type} -> VApplicative k => Cocartesian (KleisliMorphism k) where
+  left (Kleisli f) = Kleisli (either (fmap Left . f) (ret . Right))
+  right (Kleisli f) = Kleisli (either (ret . Left) (fmap Right . f))
+
 -- Const profunctor, Const r a is isomorphic to Hom((), a)
 -- This profunctor allows us to use our optics as constructors
 -- eg: op {p=Const} (MkConst 3) == MkConst (Just 3)

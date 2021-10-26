@@ -200,7 +200,7 @@ Monads satisfy the following laws:
 	\item \texttt{∀ f,g,h,x. f `join` (g `join` h) \$ x = (f `join` g) `join` h \$ x} (associativity)
 \end{enumerate}
 
-Monads naturally give rise to a category known as a Kleisli category (\cite{mac1970categories} p.147). In this category, the objects are the same as the category of types, and the morphisms are each of the form \texttt{a -> m b} so $\operatorname{Hom}(\texttt{a},\texttt{b})=\{ f : \texttt{a -> m b} \}$. Morphism composition utilises the join operation, so $f\circ_m g = \mu\circ f\circ g$.
+Monads naturally give rise to a category known as a Kleisli category (\cite{mac1970categories} p.147). In this category, the objects are the same as the category of types, and the morphisms are each of the form \texttt{a -> m b} so $\operatorname{Hom}(\texttt{a},\texttt{b})=\{ f : \texttt{a -> m b} \}$. Morphism composition utilises the join operation, so $f\circ_m g = \mu\circ \texttt{fmap}(f)\circ g$.
 
 Applicative functors are a subset of endofunctors introduced by \cite{mcbride2008applicative} as a useful abstraction in functional programming intermediate between endofunctors and monads. They are endofunctors equipped with maps \texttt{pure : a -> f a} and \texttt{ap : f (a -> b) -> (f a -> f b)} (written \texttt{<*>} as an infix operator) for every applicative \texttt{f} satisfying the following properties
 
@@ -213,25 +213,15 @@ Applicative functors are a subset of endofunctors introduced by \cite{mcbride200
 
 \subsection{Profunctors}
 
-Profunctors are a generalisation of functors which relate to Hom-sets. A profunctor from category $C$ to $D$ formally is a functor $D^{op}\times C\to\mathbf{Set}$. ( TODO what's a dual category, product category?)
+Profunctors are a generalisation of functors which relate to Hom-sets. A profunctor from category $C$ to $D$ formally is a functor $D^{op}\times C\to\mathbf{Set}$, where $D^{op}$ is the dual category of $D$ and $\times$ is similar to the Cartesian product (\cite{nlab:profunctor}). The dual category has the same objects as $D$, but the directions of all morphisms are reversed.
 
-In Idris, profunctors correspond to arrow-like types. For instance, `->` is a profunctor. 
+As we assume the categories of types and sets are identical, a profunctor in Idris is a type constructor \texttt{p} which takes two type variables equipped with a map \texttt{dimap : (a -> b) -> (c -> d) -> p b c -> p a d}. Then every profunctor $p$ gives rise to a (covariant) functor $p(a,-)$ for all $a$, and a contravariant functor (functor mapping from the dual category) $p(-,a)$.
 
-Profunctors give rise to a category in which they are the Hom profunctor (is this true in general?)
+In Idris, profunctors usually correspond to arrow-like types. For instance, \texttt{->} is a profunctor. The Hom function is a profunctor, and the Hom functor is simply the partially applied Hom profunctor. Additionally, for any monad \texttt{m} the Hom profunctor in its Kleisli category is a profunctor in the category of types. Hash maps or dictionaries form profunctors (\cite{milewskicoends}).
 
-Intuitively, profunctors are type constructors that construct an function arrow like type.
+As we will see, profunctor optics are generic over profunctors, and different profunctors make optics behave differently. The Hom profunctor allows for updating fields in composite types, the Kleisli Hom profunctor does the same but while accumulating side effects, the Const profunctor recovers sum type constructors and the Forget profunctor turns optics into getters.
 
-Hom is a profunctor
-Hom functor is partially applied hom profunctor
-
--> is the Hom profunctor
-Kleisli is the Hom profunctor in the Kleisli category
-
-There are two profunctors of interest: `->` (the standard Hom profunctor in the cat of Idris types) and `(a,b:Type)->(a->f b)` for functor/monad `f` (the Hom profunctor in the Kleisli category). The latter allows us to accumulate side effects while using our optics
-
-Dictionary / hash map is a profunctor (https://bartoszmilewski.com/2017/03/29/ends-and-coends/)
-
-VProfunctor = verified not v-enriched
+Cartesian profunctors are profunctors equipped with a map \texttt{first : p a b -> p (a,c) (b,c)} and Cocartesian profunctors have a map \texttt{left : p a b -> p (Either a c) (Either b c)}. Restricting to Cartesian profunctors will restrict to lenses and to Cocartesian profunctors will restrict to prisms.
 
 \subsection{Optics}
 
@@ -267,7 +257,7 @@ _1 = MkPrimLens fst update where
 
 Then \texttt{view \_1 (2, True) == 2}. However, there is no clear way to compose two lenses or two prisms using this encoding, and it is not possible to compose a lens and a prism using these two typeclasses.
 
-A more powerful encoding is the van Laarhoven functor transformer lenses (\cite{laarhoven2011lens}). These are parameterised over the functor typeclass, where different functors applied to the optics change how they behave. In Haskell,
+A more powerful encoding is van Laarhoven functor transformer lenses (\cite{laarhoven2011lens}). These are parameterised over the functor typeclass, where different functors applied to the optics change how they behave. In Haskell,
 
 \begin{minted}{haskell}
 type LaarhovenLens a b = forall f. Functor f => (b -> f b) -> (a -> f a)
@@ -275,11 +265,17 @@ type LaarhovenLens a b = forall f. Functor f => (b -> f b) -> (a -> f a)
 
 Under this encoding, the above product projection lens would have type \texttt{LaarhovenLens (a,b) a}. It can be modified to have the additional degree of freedom in the simpler encoding.
 
-The \texttt{Const a} functor \texttt{newtype Const a b = \{ unConst :: a \}} stores a value of type \texttt{a}. Applied to the above definition, it produces a getter \texttt{view optic structure = optic (\textbackslash{}x -> Const x) structure}. Likewise, the identity functor \texttt{newtype Id a = \{ unId :: a \}} produces an update function \texttt{update optic field structure = optic (\textbackslash{}x -> Id field) structure}.
+The \texttt{Const a} functor \texttt{newtype Const a b = \{ unConst :: a \}} stores a value of type \texttt{a}. Applied to the above definition, it produces a getter \texttt{view optic structure = unConst \$ optic (\textbackslash{}x -> Const x) structure}. Likewise, the identity functor \texttt{newtype Id a = \{ unId :: a \}} produces an update function \texttt{update optic field structure = unId \$ optic (\textbackslash{}x -> Id field) structure}.
 
 These optics are simple functions and so support composition, however lenses and prisms are still mutually exclusive and cannot be composed. This leaves profunctor optics, which generalise van Laarhoven's functor transformer lenses and are flexible enough to support composition.
 
 \subsection{Profunctor Optics}
+
+Profunctor optics are
+
+\begin{minted}{idris}
+Optic p a b s t = p a b -> p s t
+\end{minted}
 
 what are profunctor optics?
 why are they good?
@@ -292,18 +288,10 @@ correspondence with van Laarhoven \cite{boisseau2018yoneda} - this means even th
 > We can then have a penultimate section discussing a framework for formal verification of profunctor optics in Idris and discussing the structure and details of your solution (minimal use of source code here). Concretely, this section should properly motivate the formal verification of profunctor optics and then progress through your solution. Talk concepts and give formal examples but avoid using source code (you can refer to sections in the appendix where necessary though).
 
 
+VProfunctor = verified not v-enriched
+
+
 \section{Related Work}
-
-
-https://bartoszmilewski.com/2017/03/29/ends-and-coends/
-
-http://www.mtm.ufsc.br/~ebatista/2016-2/maclanecat.pdf
-
-https://dl.acm.org/doi/pdf/10.1145/3236779
-
-Research Rabbit
-
-https://dl.acm.org/doi/pdf/10.1145/1040305.1040325
 
 Existing research on profunctor optics
 

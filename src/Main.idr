@@ -72,11 +72,11 @@ prismFromPrim (MkPrimPrism m b) = dimap m (either id b) . right
 
 -- Complex data structures
 
--- This type is from van Laarhoven
--- https://twanvl.nl/blog/haskell/non-regular1
+-- This type is from van Laarhoven (https://twanvl.nl/blog/haskell/non-regular1)
 -- FunList a b t is isomorphic to ∃n. a^n × (b^n -> t)
 -- which is equivalent to the type of a traversable (Pickering et. al. 2018)
 -- It allows us to write optics for lists and trees
+-- This is ported from the Haskell code from Pickering et. al. 2018
 data FunList : Type -> Type -> Type -> Type where
   Done : t -> FunList a b t
   More : a -> FunList a b (b -> t) -> FunList a b t
