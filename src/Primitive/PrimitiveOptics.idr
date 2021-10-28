@@ -50,6 +50,7 @@ sgn = MkPrimLens signum chsgn where
   chsgn (False, x) = -abs x
 
 -- Maybe prism
+public export
 op' : PrimPrism a b (Maybe a) (Maybe b)
 op' = MkPrimPrism match build where
   match : Maybe a -> Either (Maybe b) a

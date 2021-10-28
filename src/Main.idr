@@ -5,6 +5,7 @@ import Category.VProfunctor
 import Category.VFunctor
 import Category.Morphism
 import Primitive.PrimitiveOptics
+import Primitive.LaarhovenOptics
 import Data.Vect
 
 %default total
@@ -15,7 +16,7 @@ infixr 0 ~>
 
 -- Profunctor optic types
 
-Optic : (Type -> Type -> Type) -> Type -> Type -> Type -> (Type -> Type)
+Optic : (Type -> Type -> Type) -> Type -> Type -> Type -> Type -> Type
 Optic p a b s t = p a b -> p s t
 
 Adapter : Type -> Type -> Type -> Type -> Type
@@ -36,6 +37,20 @@ Traversal : Type -> Type -> Type -> Type -> Type
 Traversal a b s t = {p : Type -> Type -> Type}
   -> (Cartesian p, Cocartesian p, Monoidal p)
   => Optic p a b s t
+
+-- Helpful combinators
+
+-- `Forget r` profunctor optics operate as getters
+view : {a : Type} -> Lens a b s t -> s -> a
+view optic x = unForget (optic {p=Forget a} (MkForget (\x => x))) x
+
+-- Morphism profunctor optics operate as setters
+update : Optic Morphism a b s t -> (a -> b) -> (s -> t)
+update optic f x = applyMor (optic (Mor f)) x
+
+-- Const profunctor optics recovers sum type constructors
+build : Prism a b s t -> b -> t
+build optic x = unConst (optic {p=Const} (MkConst x))
 
 -- Product type optics
 
@@ -67,8 +82,8 @@ op_π₁ = op . π₁
 
 -- Map primitive optics to profunctor optics
 
-prismFromPrim : PrimPrism a b s t -> Prism a b s t
-prismFromPrim (MkPrimPrism m b) = dimap m (either id b) . right
+prismPrimToPro : PrimPrism a b s t -> Prism a b s t
+prismPrimToPro (MkPrimPrism m b) = dimap m (either id b) . right
 
 -- Complex data structures
 
@@ -195,20 +210,6 @@ public export
 implementation {a : Type} -> {b : Type} -> Cocartesian (PrimPrism a b) where
   left (MkPrimPrism m b) = MkPrimPrism (either (bimapEither Left id . m) (Left . Right)) (Left . b)
   right (MkPrimPrism m b) = MkPrimPrism (either (Left . Left) (bimapEither Right id . m)) (Right . b)
-
--- Helpful combinators
-
--- `Forget r` profunctor optics operate as getters
-view : {a : Type} -> Lens a b s t -> s -> a
-view optic x = unForget (optic {p=Forget a} (MkForget (\x => x))) x
-
--- Morphism profunctor optics operate as setters
-update : Optic Morphism a b s t -> (a -> b) -> (s -> t)
-update optic f x = applyMor (optic (Mor f)) x
-
--- Const profunctor optics recovers sum type constructors
-build : Prism a b s t -> b -> t
-build optic x = unConst (optic {p=Const} (MkConst x))
 
 -- Unit tests (if these fail we get type errors)
 -- These are provided as examples of how to use these profunctor optics in practice
